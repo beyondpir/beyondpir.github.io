@@ -237,21 +237,22 @@ function setQP(o){const p=new URLSearchParams(), parts=[]; Object.entries(o).for
 function shareBtn(id){return `<button class="more" id="${id}" style="margin:0" title="Copy a link to exactly this view">🔗 Copy link to this view</button>`;}
 function wireShare(id){const b=document.getElementById(id); if(!b) return; b.addEventListener("click",async()=>{const url=SHARE_BASE+location.hash; let ok=false; try{await navigator.clipboard.writeText(url); ok=true;}catch(e){}
   if(ok){b.textContent="✓ Link copied"; setTimeout(()=>b.textContent="🔗 Copy link to this view",1800);} else {const i=document.createElement("input"); i.value=url; i.readOnly=true; i.style.cssText="width:100%;margin-top:6px;font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)"; b.after(i); i.select();}});}
-function route(){
+function route(keep){
   const [h,qs]=splitHash(); QP=parseQP(qs);
   document.querySelectorAll("nav.top a.l").forEach(a=>a.classList.toggle("on",h.startsWith(a.dataset.r)));
   document.querySelectorAll(".tabbar a").forEach(a=>a.classList.toggle("on",h===a.dataset.t||h.startsWith(a.dataset.t+"-")||(a.dataset.t==="players"&&h.startsWith("p-"))));
   document.querySelectorAll("nav.top details.more").forEach(d=>{d.open=false; d.classList.toggle("on",!!d.querySelector("a.l.on"));}); setSheet(false);
-  window.scrollTo(0,0);
+  if(keep!==true) window.scrollTo(0,0);
   if(h==="vs"||h.startsWith("vs-")) return viewCompare(h.slice(3).split("-").filter(Boolean));
   if(h.startsWith("p-")) return viewPlayer(h.slice(2));
   if(h.startsWith("t26-")) return viewTeam26(h.slice(4));
   if(h.startsWith("t-")) {const [s,t]=h.slice(2).split("-"); return viewTeam(+s,t);}
-  (routes[h]||viewHome)();
+  return (routes[h]||viewHome)();
 }
-window.addEventListener("hashchange",route);
-let rt; window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(route,200);});
-try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",route);}catch(e){}
+function rerender(){const y=window.scrollY, back=()=>window.scrollTo(0,y); Promise.resolve(route(true)).catch(()=>{}).then(()=>{requestAnimationFrame(back); setTimeout(back,600);});}
+window.addEventListener("hashchange",()=>route());
+let rt, lastW=window.innerWidth; window.addEventListener("resize",()=>{if(window.innerWidth===lastW) return; lastW=window.innerWidth; clearTimeout(rt); rt=setTimeout(rerender,200);});
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",rerender);}catch(e){}
 
 // ---------------- charts
 function metricsChart(el,compact){
