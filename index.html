@@ -50,7 +50,8 @@ nav.top button.thm{all:unset;cursor:pointer;color:#9fb0c6;font-size:17px;padding
  .tabbar{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:30;background:var(--board);border-top:2px solid var(--accent);justify-content:space-around;padding:9px 0 calc(12px + env(safe-area-inset-bottom))}
  .tabbar a,.tabbar button{all:unset;cursor:pointer;color:#9fb0c6;font-family:var(--display);font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;padding:4px 6px}
  .tabbar a.on{color:var(--accent)} body{padding-bottom:64px}
- .sheet.open{display:block;position:fixed;inset:auto 0 56px 0;z-index:29;background:var(--board);border-top:1px solid #22324d;padding:14px 18px 18px;max-height:70vh;overflow:auto}
+ .sheet.open{display:block;position:fixed;inset:auto 0 calc(50px + env(safe-area-inset-bottom)) 0;z-index:29;background:var(--board);border-top:1px solid #22324d;padding:14px 18px 18px;max-height:70vh;max-height:70dvh;overflow:auto;overscroll-behavior:contain}
+ .sheet-bd{display:none} html.sheet-on,html.sheet-on body{overflow:hidden} html.sheet-on .sheet-bd{display:block;position:fixed;inset:0;z-index:28;background:rgba(0,0,0,.6);touch-action:none}
  .sheet a{display:block;color:#f4f1ea;font-family:var(--display);font-size:18px;text-transform:uppercase;letter-spacing:.04em;padding:9px 0;border-bottom:1px solid #16243a;text-decoration:none}
  .sheet .sh-h{font:500 11.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#ff6a1a;margin:14px 0 2px}
  .sheet input{width:100%;font:inherit;font-size:16px;padding:9px 12px;border:1px solid #22324d;border-radius:6px;background:#111d30;color:#f4f1ea;margin-bottom:8px}}
@@ -172,12 +173,12 @@ nav.top details.more{background:none;border:0;padding:0;margin:0;max-width:none}
     </div></details>
     </div>
     <input id="navq" type="search" placeholder="Find a player" aria-label="Find a player" list="plist">
-    <button class="thm" id="thm" aria-label="Switch between light and dark" title="Light / dark"><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 2a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+    
     <datalist id="plist"></datalist>
   </div>
 </nav>
 <div class="tabbar" aria-label="Sections"><a href="#home" data-t="home">Home</a><a href="#players" data-t="players">Players</a><a href="#vs" data-t="vs">Compare</a><a href="#season" data-t="season">2026–27</a><button id="tbm" aria-expanded="false">More</button></div>
-<div class="sheet" id="sheet"><input id="sheetq" type="search" placeholder="Find a player" aria-label="Find a player" list="plist"><div class="sh-h">Data</div><a href="#players">Players</a><a href="#vs">Compare</a><a href="#season">2026–27</a><a href="#teams">Teams</a><a href="#league">League</a><a href="#awards">Awards vs ratings</a><div class="sh-h">Play</div><a href="#explore">Explore</a><a href="#build">Make your own PIR</a><a href="#dist">Distributions</a><a href="#clutch">Clutch?</a><div class="sh-h">Method</div><a href="#start">Start here</a><a href="#metrics">Why not PIR</a><a href="#tried">What we tried</a><a href="#how">How it works</a><a href="#glossary">Glossary</a></div>
+<div class="sheet-bd" id="sheetbd"></div><div class="sheet" id="sheet"><input id="sheetq" type="search" placeholder="Find a player" aria-label="Find a player" list="plist"><div class="sh-h">Data</div><a href="#players">Players</a><a href="#vs">Compare</a><a href="#season">2026–27</a><a href="#teams">Teams</a><a href="#league">League</a><a href="#awards">Awards vs ratings</a><div class="sh-h">Play</div><a href="#explore">Explore</a><a href="#build">Make your own PIR</a><a href="#dist">Distributions</a><a href="#clutch">Clutch?</a><div class="sh-h">Method</div><a href="#start">Start here</a><a href="#metrics">Why not PIR</a><a href="#tried">What we tried</a><a href="#how">How it works</a><a href="#glossary">Glossary</a></div>
 <main class="wrap" id="app"><p class="kicker" style="padding:40px 0">Loading data…</p></main>
 <footer><div class="wrap">
   <p>Data: www.euroleague.net and/or www.eurocupbasketball.com. Ratings, charts and analysis are my own. Independent, non-commercial project, not affiliated with Euroleague Basketball.</p>
@@ -187,8 +188,11 @@ nav.top details.more{background:none;border:0;padding:0;margin:0;max-width:none}
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6.16/dist/plot.umd.min.js"></script>
 <script>
+function setSheet(on){const sh=document.getElementById("sheet");if(!sh)return;sh.classList.toggle("open",on);document.documentElement.classList.toggle("sheet-on",on);const b=document.getElementById("tbm");if(b)b.setAttribute("aria-expanded",on?"true":"false");}
+</script>
+<script>
 (function(){
-try{const t=localStorage.getItem("bp-theme"); if(t) document.documentElement.dataset.theme=t;}catch(e){}
+try{localStorage.removeItem("bp-theme");}catch(e){}
 const app=document.getElementById("app");
 let CORE=null, DET=null, TEAMS=null, BYKEY={};
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -237,7 +241,7 @@ function route(){
   const [h,qs]=splitHash(); QP=parseQP(qs);
   document.querySelectorAll("nav.top a.l").forEach(a=>a.classList.toggle("on",h.startsWith(a.dataset.r)));
   document.querySelectorAll(".tabbar a").forEach(a=>a.classList.toggle("on",h===a.dataset.t||h.startsWith(a.dataset.t+"-")||(a.dataset.t==="players"&&h.startsWith("p-"))));
-  document.querySelectorAll("nav.top details.more").forEach(d=>{d.open=false; d.classList.toggle("on",!!d.querySelector("a.l.on"));}); const sh=document.getElementById("sheet"); if(sh) sh.classList.remove("open");
+  document.querySelectorAll("nav.top details.more").forEach(d=>{d.open=false; d.classList.toggle("on",!!d.querySelector("a.l.on"));}); setSheet(false);
   window.scrollTo(0,0);
   if(h==="vs"||h.startsWith("vs-")) return viewCompare(h.slice(3).split("-").filter(Boolean));
   if(h.startsWith("p-")) return viewPlayer(h.slice(2));
@@ -1119,8 +1123,10 @@ Promise.all([fetch("data/core.json").then(r=>r.json()),fetch("data/teams.json").
   [document.getElementById("navq"),document.getElementById("sheetq")].forEach(nq=>nq&&nq.addEventListener("change",()=>{const p=c.players.find(x=>deacc(x.name)===deacc(nq.value.trim()));if(p){location.hash="p-"+p.k;nq.value="";}}));
   document.querySelectorAll("nav.top details.more").forEach(d=>d.addEventListener("toggle",()=>{if(d.open) document.querySelectorAll("nav.top details.more").forEach(o=>{if(o!==d) o.open=false;});}));
   document.addEventListener("click",e=>{if(!e.target.closest("nav.top details.more")) document.querySelectorAll("nav.top details.more").forEach(d=>d.open=false);});
-  document.getElementById("tbm").addEventListener("click",()=>{const sh=document.getElementById("sheet");sh.classList.toggle("open");});
-  document.getElementById("thm").addEventListener("click",()=>{const r=document.documentElement, dark=getComputedStyle(r).getPropertyValue("--bg").trim().toLowerCase()==="#0c1726"; r.dataset.theme=dark?"light":"dark"; try{localStorage.setItem("bp-theme",r.dataset.theme);}catch(e){} route();});
+  document.getElementById("tbm").addEventListener("click",()=>setSheet(!document.getElementById("sheet").classList.contains("open")));
+  document.getElementById("sheetbd").addEventListener("click",()=>setSheet(false));
+  document.querySelectorAll("#sheet a").forEach(a=>a.addEventListener("click",()=>setSheet(false)));
+  
   route();
 }).catch(e=>{app.innerHTML=`<p style="padding:40px 0">The data could not be loaded (${esc(e.message)}). Reload the page to try again.</p>`;});
 })();
