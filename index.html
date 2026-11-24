@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beyond PIR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Data-first EuroLeague site: scoreboard numerals, one accent, uncertainty drawn as shaded strips. */
+:root{
+  --bg:#f6f3ee; --bg2:#ece6dc; --surface:#ffffff; --ink:#0c1726; --muted:#55657a; --line:#ddd4c6; --soft:#ece6dc;
+  --accent:#d9520b; --link:#a63f09; --acctext:#a63f09; --segbg:#a63f09; --segfg:#ffffff; --box:#8f6805; --hyb:#0d8a7c; --pir:#8a94a3; --down:#2468b8;
+  --board:#0c1726; --wood:#9a5f2b; --wood2:#8e5526; --woodink:#2a1a0c; --digit:#ffd166;
+  --display:"Oswald","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c1726; --bg2:#13223a; --surface:#111d30; --ink:#f4f1ea; --muted:#9fb0c6; --line:#22324d; --soft:#1a2a44;
+  --accent:#ff6a1a; --link:#ff8a4a; --acctext:#ff6a1a; --segbg:#ff6a1a; --segfg:#0c1726; --box:#ffd166; --hyb:#33c4ae; --pir:#8592a6; --down:#5aa9ff; --board:#050b14; color-scheme:dark;}}
+:root[data-theme="dark"]{--bg:#0c1726; --bg2:#13223a; --surface:#111d30; --ink:#f4f1ea; --muted:#9fb0c6; --line:#22324d; --soft:#1a2a44;
+  --accent:#ff6a1a; --link:#ff8a4a; --acctext:#ff6a1a; --segbg:#ff6a1a; --segfg:#0c1726; --box:#ffd166; --hyb:#33c4ae; --pir:#8592a6; --down:#5aa9ff; --board:#050b14; color-scheme:dark;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+a{color:var(--link);text-decoration:none} a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.prose{max-width:680px}
+nav.top{position:sticky;top:0;z-index:20;background:var(--board);border-bottom:2px solid var(--accent);color:#f4f1ea}
+nav.top .wrap{display:flex;gap:20px;align-items:center;height:60px}
+nav.top .brand{font-family:var(--display);font-weight:700;font-size:23px;letter-spacing:.02em;text-transform:uppercase;margin-right:auto;color:#f4f1ea;display:flex;align-items:center;gap:10px;text-decoration:none}
+.ball{width:20px;height:20px;border-radius:50%;background:var(--accent);position:relative;overflow:hidden;flex:none;display:inline-block}.ball:before,.ball:after{content:"";position:absolute;border:1.5px solid var(--board)}.ball:before{inset:-2px 8px}.ball:after{inset:8px -2px}
+nav.top .links{display:flex;gap:18px;align-items:center}
+nav.top a.l{color:#9fb0c6;font-family:var(--display);font-size:14.5px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;text-decoration:none}
+nav.top a.l.on,nav.top a.l:hover{color:#fff}
+nav.top details.more{position:relative}nav.top details.more summary{list-style:none;cursor:pointer;color:#9fb0c6;font-family:var(--display);font-size:14.5px;text-transform:uppercase;letter-spacing:.06em}
+nav.top details.more summary::-webkit-details-marker{display:none}
+nav.top details.more.on summary,nav.top details.more summary:hover{color:#fff}
+nav.top details.more .menu{position:absolute;right:0;top:34px;background:var(--board);border:1px solid #22324d;border-radius:8px;padding:8px;display:grid;gap:2px;min-width:180px;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+nav.top details.more .menu a.l{padding:7px 10px;border-radius:6px}nav.top details.more .menu a.l:hover{background:#13223a}
+nav.top input{font:inherit;font-size:14px;padding:7px 11px;border:1px solid #22324d;border-radius:6px;background:#111d30;color:#f4f1ea;width:190px}
+nav.top button.thm{all:unset;cursor:pointer;color:#9fb0c6;font-size:17px;padding:4px 6px}
+.tabbar,.sheet{display:none}
+@media (max-width:1100px){nav.top .links{gap:13px}nav.top a.l,nav.top details.more summary{font-size:13px}nav.top input{width:150px}}
+@media (max-width:900px){nav.top .links,nav.top input{display:none}nav.top .wrap{height:54px}
+ .tabbar{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:30;background:var(--board);border-top:2px solid var(--accent);justify-content:space-around;padding:9px 0 calc(12px + env(safe-area-inset-bottom))}
+ .tabbar a,.tabbar button{all:unset;cursor:pointer;color:#9fb0c6;font-family:var(--display);font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;padding:4px 6px}
+ .tabbar a.on{color:var(--accent)} body{padding-bottom:64px}
+ .sheet.open{display:block;position:fixed;inset:auto 0 56px 0;z-index:29;background:var(--board);border-top:1px solid #22324d;padding:14px 18px 18px;max-height:70vh;overflow:auto}
+ .sheet a{display:block;color:#f4f1ea;font-family:var(--display);font-size:18px;text-transform:uppercase;letter-spacing:.04em;padding:9px 0;border-bottom:1px solid #16243a;text-decoration:none}
+ .sheet .sh-h{font:500 11.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#ff6a1a;margin:14px 0 2px}
+ .sheet input{width:100%;font:inherit;font-size:16px;padding:9px 12px;border:1px solid #22324d;border-radius:6px;background:#111d30;color:#f4f1ea;margin-bottom:8px}}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.02;text-wrap:balance;margin:0;letter-spacing:.005em}
+h1{font-size:clamp(44px,7.5vw,84px);text-transform:uppercase}
+h1 em{font-style:normal;color:var(--accent)}
+h2{font-size:clamp(28px,4vw,40px);text-transform:uppercase;margin:0 0 10px}
+h3{font-size:21px;text-transform:uppercase;letter-spacing:.02em;margin:0 0 6px}
+.kicker{font-family:var(--mono);font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--acctext)}
+.lede{font-size:19px;max-width:660px;margin:14px 0 0}
+section{padding:36px 0;border-top:1px solid var(--line)}
+section:first-of-type{border-top:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin:14px 0}
+.cap{font-size:13.5px;color:var(--muted);margin:6px 0 0;max-width:760px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:760px){.grid2,.grid3{grid-template-columns:minmax(0,1fr)}}
+.grid2>*,.grid3>*,.card{min-width:0}
+.stat b{display:block;font-family:var(--display);font-size:42px;font-weight:700;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.stat span{font-size:14px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13.5px;color:var(--muted);margin:2px 0 8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.t-cu{background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--acctext)}
+.t-pu{background:color-mix(in srgb,var(--accent) 9%,transparent);color:var(--acctext)}
+.t-ct{background:var(--soft);color:var(--muted)}
+.t-pd{background:color-mix(in srgb,var(--down) 9%,transparent);color:var(--down)}
+.t-cd{background:color-mix(in srgb,var(--down) 22%,transparent);color:var(--down)}
+.t-ld{background:transparent;color:var(--muted);border:1px dashed var(--line)}
+.controls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:12px 0}
+.controls input[type=search],.controls select{font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}
+.controls label{font-size:14px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+th{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:var(--surface);position:sticky;top:0}
+th button{all:unset;cursor:pointer}
+th[aria-sort="ascending"] button::after{content:" ↑";color:var(--accent)}
+th[aria-sort="descending"] button::after{content:" ↓";color:var(--accent)}
+td.mono{font-family:var(--mono)}
+.more{margin:12px 0;font:inherit;font-size:14px;padding:8px 14px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer}
+.bars .row{display:grid;grid-template-columns:160px 1fr 120px;gap:10px;align-items:center;font-size:14px;padding:3px 0}
+.bars .track{height:12px;background:var(--soft);border-radius:6px;position:relative;overflow:hidden}
+.bars .fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:6px;opacity:.8}
+.bars .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted);opacity:.5}
+.bars .val{font-family:var(--mono);font-size:12.5px;color:var(--muted);text-align:right}
+@media (max-width:600px){.bars .row{grid-template-columns:1fr 110px}.bars .track{grid-column:1/-1;grid-row:2}}
+.sentence{font-size:19px;max-width:720px;margin:10px 0 0}
+.teamgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.teamgrid a{display:block;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--ink)}
+.teamgrid a b{font-family:var(--display);font-size:22px;display:block;line-height:1}
+.teamgrid a span{font-size:12.5px;color:var(--muted)}
+details{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:10px 0;max-width:780px}
+details summary{cursor:pointer;font-weight:600}
+footer{padding:36px 0 56px;border-top:1px solid var(--line);color:var(--muted);font-size:13.5px;margin-top:30px}
+.plot svg{overflow:visible;max-width:100%;height:auto}
+.htr{border-left:3px solid var(--accent);padding-left:10px;margin-top:8px}
+/* tooltips των γραφημάτων: φόντο και περίγραμμα από το θέμα (το Plot βάζει λευκό φόντο) */
+svg[class^="plot-"]{--plot-background:var(--surface);color:var(--ink)}
+svg[class^="plot-"] g[aria-label="tip"]{stroke:var(--line)}
+.hidden{display:none}
+.sim{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.sim a{display:block;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--ink);font-size:14px}
+.back{font-size:14px}
+.awrow{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 0;padding-top:12px;border-top:1px solid rgba(255,244,230,.22)}.awrow:empty{display:none}
+.aw{display:inline-block;background:rgba(42,26,12,.55);color:#fff4e6;border:1px solid rgba(255,244,230,.25);border-radius:4px;padding:3px 8px;font:600 12.5px var(--body)}.hon{font-size:12.5px;white-space:nowrap;color:var(--muted)}.awt td{white-space:normal;font-size:13.5px;line-height:1.35;vertical-align:top}.awt th{white-space:normal}.grid3 h3{margin:0 0 4px}.aw small{font-weight:400;opacity:.8;font-size:11.5px}
+.bwrow{display:grid;grid-template-columns:minmax(104px,130px) minmax(0,1fr) 48px;gap:10px;align-items:center;padding:3px 0}.bwrow label{font-size:14px;min-width:0;overflow-wrap:anywhere}.bwrow input{width:100%;min-width:0;accent-color:var(--accent)}.bwrow span{text-align:right;font-family:var(--mono);font-size:13px}
+@media (max-width:600px){.bwrow{grid-template-columns:minmax(0,1fr) 48px;row-gap:0}.bwrow input{grid-column:1/-1;grid-row:2}}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}.seg button{all:unset;cursor:pointer;padding:6px 12px;font-size:13.5px;color:var(--muted);background:var(--surface)}.seg button+button{border-left:1px solid var(--line)}.seg button[aria-pressed="true"]{background:var(--segbg);color:var(--segfg)}
+nav.top details.more{background:none;border:0;padding:0;margin:0;max-width:none}
+.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:36px;align-items:center;background:radial-gradient(circle at 92% 130%,transparent 0 179px,var(--line) 180px 182px,transparent 183px),radial-gradient(circle at 92% 130%,transparent 0 359px,var(--line) 360px 362px,transparent 363px),var(--bg2);border:1px solid var(--line);border-radius:10px;padding:34px 34px;margin-top:24px}
+.hero h1{margin:10px 0 14px}.hero .lede{color:var(--muted);margin-top:0}
+.board{background:var(--board);color:#f4f1ea;border:1px solid #22324d;border-radius:8px;padding:14px 16px;box-shadow:0 0 0 4px color-mix(in srgb,var(--board) 40%,transparent)}
+.board h4{margin:0 0 6px;font:500 13px var(--display);letter-spacing:.12em;text-transform:uppercase;color:#9fb0c6;display:flex;justify-content:space-between;gap:8px}
+.brow{display:grid;grid-template-columns:46px minmax(0,1fr) 52px 64px;align-items:center;gap:10px;padding:7px 0;border-top:1px solid #16243a;color:#f4f1ea;text-decoration:none}
+.chip{font:700 12.5px var(--display);text-align:center;padding:3px 0;border-radius:3px;color:#fff;letter-spacing:.04em}
+.digits{font:500 25px var(--mono);color:var(--digit);text-align:right;text-shadow:0 0 12px rgba(255,209,102,.3)}
+.brec{font:500 13px var(--mono);color:#9fb0c6;text-align:right}
+.btrack{height:8px;background:#16243a;border-radius:4px;overflow:hidden}.btrack i{display:block;height:100%;background:linear-gradient(90deg,#ff6a1a,#ffb15c)}
+.doors{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0 0}
+.door{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:6px;padding:13px 16px;color:var(--ink)!important;text-decoration:none!important}
+.door b{font:700 19px var(--display);text-transform:uppercase;display:block;letter-spacing:.02em}.door span{color:var(--muted);font-size:13.5px}
+.phead{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:28px;align-items:center;margin-top:14px}
+.wood{background:linear-gradient(160deg,var(--wood),var(--wood2));color:#fff4e6;border-radius:10px;padding:20px 22px;position:relative;overflow:hidden}
+.wood:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 38px,rgba(0,0,0,.06) 38px 40px);pointer-events:none}
+.wood>*{position:relative;z-index:1}.wood .big{font:700 88px/.9 var(--display);color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.18);margin-top:8px}
+.wood h1{color:#ffffff;font-size:clamp(34px,4.6vw,52px);margin:6px 0 4px}.wood p{margin:0;font-size:14.5px}
+.wood .wtag{display:inline-block;background:var(--woodink);color:#e8b47a;font:600 11.5px var(--mono);padding:4px 8px;border-radius:3px;text-transform:uppercase;letter-spacing:.06em}
+.facts{display:flex;gap:26px;flex-wrap:wrap;margin-top:14px}.facts b{display:block;font:700 26px var(--display)}.facts span{font:500 11.5px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+@media (max-width:900px){.hero{grid-template-columns:minmax(0,1fr);padding:22px 18px;gap:20px}.doors{grid-template-columns:repeat(2,minmax(0,1fr))}.phead{grid-template-columns:minmax(0,1fr)}.wood .big{font-size:68px}.digits{font-size:21px}}
+</style>
+</head>
+<body>
+<nav class="top" aria-label="Main">
+  <div class="wrap">
+    <a class="brand" href="#home"><span class="ball" aria-hidden="true"></span>Beyond PIR</a>
+    <div class="links">
+    <a class="l" data-r="players" href="#players">Players</a>
+    <a class="l" data-r="vs" href="#vs">Compare</a>
+    <a class="l" data-r="season" href="#season">2026–27</a>
+    <details class="more" data-g="data"><summary>Data ▾</summary><div class="menu">
+    <a class="l" data-r="teams" href="#teams">Teams</a>
+    <a class="l" data-r="league" href="#league">League</a>
+    <a class="l" data-r="awards" href="#awards">Awards vs ratings</a>
+    </div></details>
+    <details class="more" data-g="play"><summary>Play ▾</summary><div class="menu">
+    <a class="l" data-r="explore" href="#explore">Explore</a>
+    <a class="l" data-r="build" href="#build">Make your own PIR</a>
+    <a class="l" data-r="dist" href="#dist">Distributions</a>
+    <a class="l" data-r="clutch" href="#clutch">Clutch?</a>
+    </div></details>
+    <details class="more" data-g="method"><summary>Method ▾</summary><div class="menu">
+    <a class="l" data-r="start" href="#start">Start here</a>
+    <a class="l" data-r="metrics" href="#metrics">Why not PIR</a>
+    <a class="l" data-r="tried" href="#tried">What we tried</a>
+    <a class="l" data-r="how" href="#how">How it works</a>
+    <a class="l" data-r="glossary" href="#glossary">Glossary</a>
+    </div></details>
+    </div>
+    <input id="navq" type="search" placeholder="Find a player" aria-label="Find a player" list="plist">
+    <button class="thm" id="thm" aria-label="Switch between light and dark" title="Light / dark"><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 2a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+    <datalist id="plist"></datalist>
+  </div>
+</nav>
+<div class="tabbar" aria-label="Sections"><a href="#home" data-t="home">Home</a><a href="#players" data-t="players">Players</a><a href="#vs" data-t="vs">Compare</a><a href="#season" data-t="season">2026–27</a><button id="tbm" aria-expanded="false">More</button></div>
+<div class="sheet" id="sheet"><input id="sheetq" type="search" placeholder="Find a player" aria-label="Find a player" list="plist"><div class="sh-h">Data</div><a href="#players">Players</a><a href="#vs">Compare</a><a href="#season">2026–27</a><a href="#teams">Teams</a><a href="#league">League</a><a href="#awards">Awards vs ratings</a><div class="sh-h">Play</div><a href="#explore">Explore</a><a href="#build">Make your own PIR</a><a href="#dist">Distributions</a><a href="#clutch">Clutch?</a><div class="sh-h">Method</div><a href="#start">Start here</a><a href="#metrics">Why not PIR</a><a href="#tried">What we tried</a><a href="#how">How it works</a><a href="#glossary">Glossary</a></div>
+<main class="wrap" id="app"><p class="kicker" style="padding:40px 0">Loading data…</p></main>
+<footer><div class="wrap">
+  <p>Data: www.euroleague.net and/or www.eurocupbasketball.com. Ratings, charts and analysis are my own. Independent, non-commercial project, not affiliated with Euroleague Basketball.</p>
+  <p>EuroLeague 2008–09 to 2025–26 (career ratings and team seasons). Version 2.1 · November 2026.</p>
+</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6.16/dist/plot.umd.min.js"></script>
+<script>
+(function(){
+try{const t=localStorage.getItem("bp-theme"); if(t) document.documentElement.dataset.theme=t;}catch(e){}
+const app=document.getElementById("app");
+let CORE=null, DET=null, TEAMS=null, BYKEY={};
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt=(v,d=1)=>{if(v==null||isNaN(v))return "—";const a=Math.abs(v).toFixed(d);return (+a===0?"":v>0?"+":"−")+a;};
+const W=el=>Math.max(280,Math.min(1060,el.clientWidth||700));
+const cut=(n,k=24)=>n&&n.length>k?n.slice(0,k-1).trimEnd()+"…":n;
+const mlFor=(labels,px=6.6)=>Math.min(230,Math.round(16+px*Math.max(...labels.map(l=>String(l).length))));
+const sty=()=>({background:"transparent",color:css("--ink"),fontFamily:css("--mono"),fontSize:"12px"});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const season=s=>`${s}–${String((s+1)%100).padStart(2,"0")}`;
+const tname=(s,t)=>(CORE.teamnames[`${s}_${t}`]||t);
+const ord=n=>{const v=n%100;return n+(v>=11&&v<=13?"th":({1:"st",2:"nd",3:"rd"}[n%10]||"th"));};
+const fixName=s=>s.replace(/\bMc([a-z])/g,(m,c)=>"Mc"+c.toUpperCase()).replace(/\bFc\b/g,"FC").replace(/\bCsk\b/g,"CSKA").replace(/\bPbc\b/g,"PBC").replace(/\bBc\b/g,"BC");
+const deacc=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+
+const onCol=h=>{const n=parseInt(h.slice(1),16),r=n>>16&255,g=n>>8&255,b=n&255,l=(0.299*r+0.587*g+0.114*b)/255;return l>0.55?"#0c1726":"#ffffff";};
+const TCOL={OLY:"#d7263d",PAN:"#1b8a3c",DUB:"#6a4cff",MAD:"#b8962e",HTA:"#e2442f",PAM:"#e07b12",RED:"#c8102e",ULK:"#1e4fa3",ZAL:"#2e8b57",PAR:"#5b5b5b",PRS:"#2b4a8f",BAR:"#a50044",IST:"#1d3f8f",MIL:"#c62828",BES:"#3b3b3b",VIR:"#8a1c1c",MUN:"#b71c1c",TEL:"#c9a400",ASV:"#4a4a4a",BAS:"#1f5aa6"};
+function tier(p){
+  if(p.tier!=="main"||p.pab==null) return {c:"t-ld",t:"Too little data",o:5};
+  if(p.core) return p.net>0?{c:"t-cu",t:"Clearly above average",o:0}:{c:"t-cd",t:"Clearly below average",o:4};
+  if(p.pab>=0.8) return {c:"t-pu",t:"Probably above average",o:1};
+  if(p.pab<=0.2) return {c:"t-pd",t:"Probably below average",o:3};
+  return {c:"t-ct",t:"Can't tell from average",o:2};
+}
+function strip(p,w=120,h=14){ // shaded 50/80/95 strip, normal approx from 90% range
+  const se=(p.hi-p.lo)/(2*1.645), lo=-11, hi=12, x=v=>((Math.max(lo,Math.min(hi,v))-lo)/(hi-lo))*w;
+  const c=p.net>=0?"var(--accent)":"var(--down)";
+  const band=(z,op)=>`<rect x="${x(p.net-z*se)}" y="3" width="${Math.max(1,x(p.net+z*se)-x(p.net-z*se))}" height="${h-6}" rx="2" fill="${c}" opacity="${op}"/>`;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="impact ${fmt(p.net)} with range ${fmt(p.lo)} to ${fmt(p.hi)}"><line x1="${x(0)}" x2="${x(0)}" y1="0" y2="${h}" stroke="var(--muted)" stroke-opacity=".5"/>${band(1.96,.18)}${band(1.2816,.28)}${band(0.6745,.45)}<rect x="${x(p.net)-1}" y="1" width="2" height="${h-2}" fill="${c}"/></svg>`;
+}
+
+// ---------------- routing
+const routes={home:viewHome,players:viewPlayers,teams:viewTeams,metrics:viewMetrics,how:viewHow,league:viewLeague,clutch:viewClutch,season:viewSeason,tried:viewTried,glossary:viewGlossary,build:viewBuild,explore:viewExplore,dist:viewDist,start:viewStart,awards:viewAwards};
+const J={}; const getJ=async f=>J[f]||(J[f]=await (await fetch("data/"+f)).json());
+let QP=new URLSearchParams();
+const SHARE_BASE=/claudeusercontent\.com$/.test(location.hostname)?"https://claude.ai/artifact/H6qpxEtYRqdjURrGbFRCQw":location.href.split("#")[0];
+// state in the hash as  #route~key:value~key:value  (the artifact page passes "~" and ":" through, but not "?" or "&")
+function splitHash(){const f=decodeURIComponent((location.hash||"#home").slice(1)), m=f.search(/[?~]/); return m<0?[f,""]:[f.slice(0,m),f.slice(m+1)];}
+function parseQP(q){const p=new URLSearchParams(); q.split(/[~&]/).forEach(kv=>{const m=kv.search(/[:=]/); if(m>0) p.set(kv.slice(0,m),kv.slice(m+1));}); return p;}
+function curRoute(){return splitHash()[0];}
+function setQP(o){const p=new URLSearchParams(), parts=[]; Object.entries(o).forEach(([k,v])=>{if(v!=null&&v!==""){p.set(k,v); parts.push(k+":"+v);}}); QP=p; history.replaceState(null,"","#"+curRoute()+(parts.length?"~"+parts.join("~"):""));}
+function shareBtn(id){return `<button class="more" id="${id}" style="margin:0" title="Copy a link to exactly this view">🔗 Copy link to this view</button>`;}
+function wireShare(id){const b=document.getElementById(id); if(!b) return; b.addEventListener("click",async()=>{const url=SHARE_BASE+location.hash; let ok=false; try{await navigator.clipboard.writeText(url); ok=true;}catch(e){}
+  if(ok){b.textContent="✓ Link copied"; setTimeout(()=>b.textContent="🔗 Copy link to this view",1800);} else {const i=document.createElement("input"); i.value=url; i.readOnly=true; i.style.cssText="width:100%;margin-top:6px;font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)"; b.after(i); i.select();}});}
+function route(){
+  const [h,qs]=splitHash(); QP=parseQP(qs);
+  document.querySelectorAll("nav.top a.l").forEach(a=>a.classList.toggle("on",h.startsWith(a.dataset.r)));
+  document.querySelectorAll(".tabbar a").forEach(a=>a.classList.toggle("on",h===a.dataset.t||h.startsWith(a.dataset.t+"-")||(a.dataset.t==="players"&&h.startsWith("p-"))));
+  document.querySelectorAll("nav.top details.more").forEach(d=>{d.open=false; d.classList.toggle("on",!!d.querySelector("a.l.on"));}); const sh=document.getElementById("sheet"); if(sh) sh.classList.remove("open");
+  window.scrollTo(0,0);
+  if(h==="vs"||h.startsWith("vs-")) return viewCompare(h.slice(3).split("-").filter(Boolean));
+  if(h.startsWith("p-")) return viewPlayer(h.slice(2));
+  if(h.startsWith("t26-")) return viewTeam26(h.slice(4));
+  if(h.startsWith("t-")) {const [s,t]=h.slice(2).split("-"); return viewTeam(+s,t);}
+  (routes[h]||viewHome)();
+}
+window.addEventListener("hashchange",route);
+let rt; window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(route,200);});
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",route);}catch(e){}
+
+// ---------------- charts
+function metricsChart(el,compact){
+  const d=CORE.metrics.map(m=>({...m,col:m.ours?css("--accent"):css("--pir")}));
+  const nw=W(el)<560, yl=m=>nw?m.replace(/\s*\(.*\)$/,""):m;
+  el.replaceChildren(Plot.plot({width:W(el),height:compact?300:340,marginLeft:nw?130:(compact?200:215),marginRight:44,marginBottom:44,style:sty(),
+    x:{domain:[-1.2,2.8],grid:true,ticks:nw?[-1,0,1,2]:undefined,label:nw?"better at predicting →":"How much better lineups rated higher by this metric score →"},
+    y:{domain:d.map(m=>m.m),label:null,tickFormat:yl},
+    marks:[Plot.ruleX([0],{stroke:css("--muted")}),
+      Plot.ruleY(d,{y:"m",x1:"lo",x2:"hi",stroke:"col",strokeWidth:5,strokeOpacity:.35}),
+      Plot.dot(d,{y:"m",x:"v",fill:"col",r:6.5,stroke:css("--surface"),strokeWidth:1.5}),
+      Plot.text(d,{y:"m",x:"hi",text:m=>m.v.toFixed(2),dx:8,textAnchor:"start",fill:css("--ink"),fontWeight:600}),
+      Plot.tip(d,Plot.pointerY({y:"m",x:"v",title:m=>`${m.m}\n${m.v.toFixed(2)}  95% [${m.lo.toFixed(2)}, ${m.hi.toFixed(2)}]`}))]}));
+}
+function paceNet(el,R){if(!el)return;const narrow=W(el)<620;
+  el.replaceChildren(Plot.plot({width:W(el),height:320,marginBottom:42,style:sty(),x:{label:"possessions per game →",grid:true},y:{label:"↑ net / 100",grid:true},
+    marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.dot(R,{x:"pace",y:"net",r:4,fill:css("--accent")}),
+      Plot.text(R,{x:"pace",y:"net",text:t=>narrow?t.t:t.name.split(" ")[0],dy:-9,fontSize:10,fill:css("--muted")}),
+      Plot.tip(R,Plot.pointer({x:"pace",y:"net",title:t=>`${t.name}\npace ${t.pace.toFixed(1)} · net ${fmt(t.net)}`}))]}));}
+function winsChart(el,rows){
+  const w=W(el), narrow=w<620, lab=t=>narrow?t.t:cut(t.name), gmax=Math.max(...rows.map(t=>t.gp));
+  const ml=narrow?52:mlFor(rows.map(lab),7);
+  const R=rows.slice().sort((a,b)=>b.w-a.w||b.xw-a.xw);
+  el.replaceChildren(Plot.plot({width:w,height:Math.max(260,R.length*30+50),marginLeft:ml,marginRight:16,marginBottom:40,style:sty(),
+    x:{domain:[0,gmax],grid:true,label:"wins →"},y:{domain:R.map(lab),label:null,padding:.12},
+    marks:[Plot.barX(R,{y:lab,x:"w",fill:css("--accent"),insetTop:2,insetBottom:13}),
+      Plot.barX(R,{y:lab,x:"xw",fill:css("--pir"),insetTop:13,insetBottom:2}),
+      Plot.ruleX([0],{stroke:css("--muted")}),
+      Plot.tip(R,Plot.pointerY({y:lab,x:"w",title:t=>`${t.name}\n${t.w} wins of ${t.gp} · expected ${t.xw.toFixed(1)}`}))]}));
+}
+function weightsChart(el){
+  const rows=[];CORE.weights.forEach(w=>{rows.push({e:w.event,k:"Learned",v:w.box});rows.push({e:w.event,k:"PIR",v:w.pir_scaled});});
+  el.replaceChildren(Plot.plot({width:W(el),height:500,marginLeft:115,marginBottom:44,style:sty(),
+    x:{grid:true,label:"points of team margin per event →",tickFormat:d=>d.toFixed(1)},
+    y:{domain:CORE.weights.map(w=>w.event),label:null,padding:.15},
+    marks:[Plot.barX(rows.filter(r=>r.k==="PIR"),{x:"v",y:"e",fill:css("--pir"),insetTop:15,insetBottom:2}),
+      Plot.barX(rows.filter(r=>r.k==="Learned"),{x:"v",y:"e",fill:css("--box"),insetTop:2,insetBottom:13}),
+      Plot.ruleX([0],{stroke:css("--muted")}),
+      Plot.tip(rows,Plot.pointerY({x:"v",y:"e",title:r=>`${r.e}\n${r.k}: ${fmt(r.v,2)}`}))]}));
+}
+
+// ---------------- views
+function viewHome(){
+  const latest=Math.max(...TEAMS.map(t=>t.s));
+  const tl=TEAMS.filter(t=>t.s===latest).sort((a,b)=>(b.w-a.w)||((b.net||0)-(a.net||0)));
+  app.innerHTML=`
+  <section style="padding-top:0">
+    <div class="hero"><div>
+    <div class="kicker">EuroLeague · 18 seasons · every possession since 2008</div>
+    <h1>PIR gets <em>the weights</em> wrong.</h1>
+    <p class="lede">Same box score, different weights. When a coach puts a five on the floor that our learned box score rates higher, it outscores the opponent by more than PIR would predict, while simple point totals show no detectable link at all.</p><p class="cap" style="margin:12px 0 0;max-width:640px">One caveat up front: the learned weights are fitted to lineup scoring in earlier seasons, and the test also uses lineup scoring. So this is learned weights against a fixed formula, not two fixed formulas. Two numbers, two jobs: <b>on-court impact</b> (on player pages) is the player rating; the <b>learned box score</b> is a box-score formula, compared with PIR because both use the same events. The cleaner check is the <a href="#season">2026–27 test locked in advance</a>.</p><p style="margin:14px 0 0"><a href="#start" style="font-weight:600">New here? Start with the two-minute guide →</a></p></div>
+    <a class="board" id="hb" href="#season" style="text-decoration:none"><h4>2026–27 · chance of a top-6 finish</h4><div class="cap">Loading…</div></a></div>
+    <div class="doors"><a class="door" href="#players"><b>Players</b><span>615 regulars, every rating with its range</span></a><a class="door" href="#season"><b>2026–27</b><span>Standings chances, updated weekly</span></a><a class="door" href="#build"><b>Make your own PIR</b><span>Set the weights, see who comes out on top</span></a><a class="door" href="#explore"><b>Explore</b><span>Any stat against any stat, 615 players</span></a></div>
+    <div class="card"><h3>Which rating predicts which lineups win their minutes?</h3>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Built in this project</span><span><i style="background:var(--pir)"></i>Existing formulas</span></div>
+      <div id="c-met" class="plot"></div>
+      <p class="cap">Each rating is built only from earlier seasons, then tested on lineups of the same team in the next season (2018–19 to 2025–26, 358,766 possessions). Dots are estimates, bars 95% intervals. <a href="#metrics">How the test works →</a></p>
+      <p class="cap htr"><b>How to read:</b> Each row is one way of rating players. The dot shows how much more a lineup outscores its opponents, per 100 possessions, for each step up in that rating, compared with other lineups of the same team in the same season. Further right is better. The bar is the 95% range; a bar that crosses zero means no clear link.</p>
+    </div>
+    <div class="grid3">
+      <div class="card stat"><b>+0.99</b><span>Learned box score vs PIR: same box score, each pulled toward average by its own data-driven amount. 95% interval [0.39, 1.62]</span></div>
+      <div class="card stat"><b>+0.23</b><span>Even the NBA's simple Efficiency formula beats PIR. [0.02, 0.45]</span></div>
+      <div class="card stat"><b>32 / 615</b><span>regular players whose on-court impact is clearly different from average</span></div>
+    </div>
+    <p class="cap htr"><b>How to read:</b> +0.99 and +0.23 are differences between two ratings in the chart above, with their 95% range. 32 / 615 counts the players with 3,000+ possessions whose whole range lies above or below average.</p>
+  </section>
+  <section>
+    <h2>Find a player</h2>
+    <div class="controls"><input id="hq" type="search" placeholder="Type a name, e.g. Tavares" aria-label="Find a player" style="min-width:260px"></div>
+    <div id="hres" class="grid3"></div>
+  </section>
+  <section>
+    <h2>Teams ${season(latest)}</h2>
+    <div class="teamgrid">${tl.map(t=>`<a href="#t-${t.s}-${t.t}"><b>${esc(t.t)}</b><span>${esc(t.name)}<br>${t.w}–${t.gp-t.w} · net ${fmt(t.net)}</span></a>`).join("")}</div>
+    <p class="cap">Regular season (and Top 16 in older formats). Net = points scored minus allowed per 100 possessions.</p>
+    <p class="cap htr"><b>How to read:</b> Each box is one team in the latest season: wins–losses and net rating (points scored minus allowed per 100 possessions).</p>
+  </section>`;
+  metricsChart(document.getElementById("c-met"),true);
+  const hq=document.getElementById("hq"), hr=document.getElementById("hres");
+  const show=()=>{const q=deacc(hq.value.trim());
+    const list=(q?CORE.players.filter(p=>deacc(p.name).includes(q)):CORE.players.filter(p=>p.core&&p.net>0)).sort((a,b)=>b.poss-a.poss).slice(0,9);
+    hr.innerHTML=(q?"":`<p class="cap" style="grid-column:1/-1">Or start with the players who clearly stand out:</p>`)+list.map(p=>{const t=tier(p);return `<a class="card" href="#p-${p.k}" style="display:block;color:var(--ink);margin:0"><b>${esc(p.name)}</b><br><span class="tag ${t.c}">${t.t}</span><div style="margin-top:6px">${strip(p,160,14)}</div><span class="cap">${esc(p.team)} · ${p.seasons}</span></a>`;}).join("");};
+  hq.addEventListener("input",show); show();
+  getJ("odds.json").then(B=>{const el=document.getElementById("hb"); if(!el) return; const L=B.live,N=L.n;
+    const T=L.teams.map(x=>({t:x.t,w:x.w,g:x.g,p6:x.p.slice(0,6).reduce((a,b)=>a+b,0)/N})).sort((a,b)=>b.p6-a.p6).slice(0,6);
+    el.innerHTML=`<h4>2026–27 · chance of a top-6 finish <span>after round ${L.rmax}</span></h4>`+T.map(o=>`<div class="brow"><div class="chip" style="background:${TCOL[o.t]||"#4a5568"};color:${onCol(TCOL[o.t]||"#4a5568")}">${o.t}</div><div class="btrack"><i style="width:${100*o.p6}%"></i></div><div class="brec">${o.w}–${o.g-o.w}</div><div class="digits">${Math.round(100*o.p6)}%</div></div>`).join("")+`<div class="cap" style="color:#9fb0c6;margin-top:6px">All 20 teams and how this is worked out →</div>`;});
+}
+
+function viewPlayers(){
+  app.innerHTML=`<section><div class="kicker">Career on-court impact · 2008–09 to 2025–26</div><h2>Players</h2>
+  <p class="prose">On-court impact: how many points per 100 possessions a player adds to his team's margin, compared with an average regular, after accounting for the other nine players on the floor. The shaded strip is the uncertainty: darker = more likely. Players are grouped by how sure we are, not ranked one by one.</p>
+  <div class="controls"><input id="q" type="search" placeholder="Search a player" aria-label="Search a player">
+   <label>Group <select id="tf"><option value="">All</option><option value="0">Clearly above</option><option value="1">Probably above</option><option value="2">Can't tell</option><option value="3">Probably below</option><option value="4">Clearly below</option><option value="5">Too little data</option></select></label>
+   <label>Honours <select id="hf"><option value="">All players</option><option value="any">Any title or award</option><option value="CHAMP">EuroLeague champions</option><option value="MVP">MVPs</option><option value="ALL">All-EuroLeague teams</option><option value="HON">All-Decade, All-25 or Legend</option></select></label>
+   <label>Min. possessions <select id="mp"><option value="3000" selected>3,000 (regulars)</option><option value="1000">1,000</option><option value="10000">10,000</option></select></label></div>
+  <div class="tablewrap"><table id="tb"><thead><tr>
+   <th class="l" data-k="name"><button>Player</button></th><th class="l" data-k="team"><button>Main team</button></th><th data-k="poss"><button>Poss.</button></th>
+   <th data-k="net" aria-sort="descending"><button>Impact</button></th><th class="l">Range</th><th class="l" data-k="o"><button>Group</button></th><th data-k="pir100"><button>PIR/100</button></th><th class="l">Honours</th></tr></thead><tbody></tbody></table></div>
+  <p class="cap htr"><b>How to read:</b> Impact = points per 100 possessions his team gains with him on the floor, compared with an average regular. In the range bar, the grey line is average (zero) and the coloured band shows where his true impact most likely lies; darker = more likely. Group = how sure we are, based on that band. PIR/100 is shown for comparison.</p>
+  <button class="more" id="more">Show more</button> <span class="kicker" id="cnt"></span></section>`;
+  let sk="net",sd=-1,shown=60,AWD={};
+  const tb=app.querySelector("tbody");
+  function render(){
+    const q=deacc(document.getElementById("q").value.trim()),tf=document.getElementById("tf").value,mp=+document.getElementById("mp").value,hf=document.getElementById("hf").value;
+    const hon=k=>{const L=AWD[k]||[]; return hf===""||(hf==="any"?L.length>0:hf==="ALL"?L.some(x=>x[1]==="ALL1"||x[1]==="ALL2"):hf==="HON"?L.some(x=>["DEC","A25","LEG"].includes(x[1])):L.some(x=>x[1]===hf));};
+    let rows=CORE.players.map(p=>({...p,o:tier(p).o})).filter(p=>p.poss>=mp&&(!q||deacc(p.name).includes(q))&&(tf===""||p.o==+tf)&&hon(p.k));
+    rows.sort((a,b)=>{const A=a[sk],B=b[sk];return (typeof A==="string"?A.localeCompare(B):(A-B))*sd;});
+    const total=rows.length; rows=rows.slice(0,shown);
+    tb.innerHTML=rows.map(p=>{const t=tier(p);return `<tr><td><a href="#p-${p.k}">${esc(p.name)}</a></td><td class="l">${esc(p.team)}</td><td class="mono">${p.poss.toLocaleString("en")}</td><td class="mono"><b>${fmt(p.net)}</b></td><td class="l">${strip(p)}</td><td class="l"><span class="tag ${t.c}">${t.t}</span></td><td class="mono">${p.pir100.toFixed(1)}</td><td class="l hon">${awardSummary(AWD[p.k],true)}</td></tr>`;}).join("");
+    document.getElementById("cnt").textContent=`Showing ${rows.length} of ${total}`;
+    document.getElementById("more").hidden=rows.length>=total;
+    app.querySelectorAll("th[data-k]").forEach(th=>th.setAttribute("aria-sort",th.dataset.k===sk?(sd>0?"ascending":"descending"):"none"));
+  }
+  app.querySelectorAll("th[data-k] button").forEach(b=>b.addEventListener("click",()=>{const k=b.parentElement.dataset.k;if(sk===k)sd*=-1;else{sk=k;sd=(k==="name"||k==="team"||k==="o")?1:-1;}render();}));
+  ["q","tf","mp","hf"].forEach(id=>document.getElementById(id).addEventListener("input",()=>{shown=60;render();}));
+  document.getElementById("more").addEventListener("click",()=>{shown+=100;render();});
+  render(); getJ("awards.json").then(A=>{AWD=A.p; render();});
+}
+
+const PROF=[["pts","Points",1],["usg","Usage (shots + turnovers)",1],["ts","True shooting",1],["tpr","Share of shots from three",1],["p3","3-point %",1],["ft","Free throw %",1],["ast","Assists",1],["tov","Turnovers",0],["stl","Steals",1],["blk","Blocks",1],["oreb","Offensive rebounds",1],["dreb","Defensive rebounds",1],["fd","Fouls drawn",1],["pf","Fouls committed",0]];
+async function needDet(){ if(!DET){ app.innerHTML=`<p class="kicker" style="padding:40px 0">Loading player details…</p>`; DET=await (await fetch("data/players.json")).json(); } }
+
+// ---------------- shot chart module (24 Nov: season range, shots / heat / zones, made-missed filter, compare)
+const SZ=[["rim","At the rim",2],["paint","Rest of the paint",2],["mid","Mid-range two",2],["c3l","Left corner three",3],["w3l","Left wing three",3],["t3","Top three",3],["w3r","Right wing three",3],["c3r","Right corner three",3]];
+async function shotData(k,a,b){
+  const CR=await getJ("shots_career.json"), C=CR[k]; if(!C) return null;
+  const ss=C.seasons.filter(s=>s>=a&&s<=b); const out={k,seasons:ss,shots:[],z:{},line3:675};
+  SZ.forEach(([z])=>out.z[z]=[0,0,0]);
+  for(const s of ss){const S=await getJ(`shots/${s}.json`), P=S.players[k]; if(!P) continue;
+    P.s.forEach(([x,y,m])=>out.shots.push([x,y,m,s]));
+    SZ.forEach(([z])=>{const q=P.z[z]; if(!q) return; const L=S.league[z]; out.z[z][0]+=q[0]; out.z[z][1]+=q[1]; out.z[z][2]+=L[0]?q[0]*L[1]/L[0]:0;});}
+  if(ss.length&&Math.max(...ss)<=2010) out.line3=625;
+  return out;
+}
+function courtSVG(D,mode,filt,uid){
+  const R=D.line3, cx=R===675?660:625, cy=Math.sqrt(R*R-cx*cx), X=v=>v+760, Y=v=>900-v, B=Y(-157.5);
+  const a0=Math.asin(cy/R); let arc3=`M ${X(-cx)} ${B} L ${X(-cx)} ${Y(cy)}`; for(let i=0;i<=60;i++){const t=Math.PI-a0-(Math.PI-2*a0)*i/60; arc3+=` L ${X(R*Math.cos(t))} ${Y(R*Math.sin(t))}`;} arc3+=` L ${X(cx)} ${B} Z`;
+  let rimP=`M ${X(-125)} ${B} L ${X(-125)} ${Y(0)}`; for(let i=0;i<=40;i++){const t=Math.PI-Math.PI*i/40; rimP+=` L ${X(125*Math.cos(t))} ${Y(125*Math.sin(t))}`;} rimP+=` L ${X(125)} ${B} Z`;
+  const KW=245, KH=422.5, yk=Math.sqrt(R*R-KW*KW), ln=`stroke="var(--ink)" stroke-opacity=".38" stroke-width="5" fill="none"`;
+  const lines=`<path d="${arc3}" ${ln}/><rect x="${X(-KW)}" y="${Y(KH)}" width="${2*KW}" height="${B-Y(KH)}" ${ln}/><path d="${rimP}" ${ln}/>${mode==="zones"?"":`<circle cx="${X(0)}" cy="${Y(KH)}" r="180" ${ln}/>`}<line x1="${X(-90)}" x2="${X(90)}" y1="${Y(-37.5)}" y2="${Y(-37.5)}" ${ln}/><circle cx="${X(0)}" cy="${Y(0)}" r="22.5" ${ln}/>`;
+  let body="", legend="";
+  const S=D.shots.filter(([x,y,m])=>y*10<=900&&(filt==="all"||(filt==="made"?m:!m)));
+  if(mode==="shots"){const rr=S.length>1500?5:S.length>600?7:11;
+    body=S.map(([x,y,m])=>m?`<circle cx="${X(x*10)}" cy="${Y(y*10)}" r="${rr}" fill="var(--accent)" fill-opacity=".72"/>`:`<circle cx="${X(x*10)}" cy="${Y(y*10)}" r="${rr-1}" fill="none" stroke="var(--down)" stroke-opacity=".7" stroke-width="4"/>`).join("");
+    legend=`<span><i style="background:var(--accent)"></i>Made</span><span><i style="border:2px solid var(--down);background:transparent"></i>Missed</span>`;}
+  else if(mode==="heat"){const r=48, w=Math.sqrt(3)*r, H={};
+    S.forEach(([x,y,m])=>{const px=x*10, py=y*10; let row=Math.round(py/(1.5*r)), col=Math.round((px-(row&1?w/2:0))/w); const k=row+"_"+col; (H[k]=H[k]||{row,col,n:0,m:0}).n++; if(m) H[k].m++;});
+    const mx=Math.max(1,...Object.values(H).map(h=>h.n)), hex=(cx_,cy_)=>d3.range(6).map(i=>{const t=Math.PI/180*(60*i-30);return [cx_+r*Math.cos(t),cy_+r*Math.sin(t)];}).map(p=>p.join(",")).join(" ");
+    body=Object.values(H).map(h=>{const px=h.col*w+(h.row&1?w/2:0), py=h.row*1.5*r; const o=Math.min(1,0.18+0.82*Math.sqrt(h.n/mx));
+      return `<polygon points="${hex(X(px),Y(py))}" fill="var(--accent)" fill-opacity="${o.toFixed(2)}" stroke="var(--surface)" stroke-width="2"><title>${h.n} shot${h.n>1?"s":""}, ${Math.round(100*h.m/h.n)}% made</title></polygon>`;}).join("");
+    legend=`<span><i style="background:var(--accent);opacity:.25"></i>Few shots</span><span><i style="background:var(--accent)"></i>Many shots</span><span class="cap">Hover a cell for its count and %</span>`;}
+  else {const sc=d3.scaleLinear().domain([-0.2,0,0.2]).range([css("--down"),css("--soft"),css("--accent")]).clamp(true), I={};
+    SZ.forEach(([z,lab,v])=>{const q=D.z[z]; I[z]=q[0]?{n:q[0],pct:q[1]/q[0],col:q[0]>=30?sc(v*(q[1]-q[2])/q[0]):css("--soft"),few:q[0]<30}:{n:0,col:css("--soft"),few:true};});
+    const lab=(z,x,y,an="middle",fs=46)=>{const i=I[z]; return `<text x="${X(x)}" y="${Y(y)}" text-anchor="${an}" font-family="Oswald,var(--display)" font-size="${fs}" font-weight="700" fill="var(--ink)">${i.n?Math.round(100*i.pct)+"%":"—"}</text><text x="${X(x)}" y="${Y(y)+fs*0.8}" text-anchor="${an}" font-size="${Math.round(fs*0.62)}" fill="var(--ink)" opacity=".75">${i.n} shot${i.n===1?"":"s"}${i.few&&i.n?" (few)":""}</text>`;};
+    body=`<g clip-path="url(#cl${uid})"><rect x="0" y="0" width="${X(-KW)}" height="${B}" fill="${I.w3l.col}"/><rect x="${X(KW)}" y="0" width="${1520-X(KW)}" height="${B}" fill="${I.w3r.col}"/><rect x="${X(-KW)}" y="0" width="${2*KW}" height="${B}" fill="${I.t3.col}"/>
+      <rect x="0" y="${Y(141)}" width="${X(-cx)}" height="${B-Y(141)}" fill="${I.c3l.col}"/><rect x="${X(cx)}" y="${Y(141)}" width="${1520-X(cx)}" height="${B-Y(141)}" fill="${I.c3r.col}"/>
+      <path d="${arc3}" fill="${I.mid.col}"/><rect x="${X(-KW)}" y="${Y(KH)}" width="${2*KW}" height="${B-Y(KH)}" fill="${I.paint.col}"/><path d="${rimP}" fill="${I.rim.col}"/>
+      <line x1="0" x2="${X(-cx)}" y1="${Y(141)}" y2="${Y(141)}" ${ln}/><line x1="${X(cx)}" x2="1520" y1="${Y(141)}" y2="${Y(141)}" ${ln}/><line x1="${X(-KW)}" x2="${X(-KW)}" y1="0" y2="${Y(yk)}" ${ln} stroke-dasharray="14 10"/><line x1="${X(KW)}" x2="${X(KW)}" y1="0" y2="${Y(yk)}" ${ln} stroke-dasharray="14 10"/></g>
+      ${lab("rim",0,30,"middle",40)}${lab("paint",0,290)}${lab("mid",0,545,"middle",42)}${lab("t3",0,800)}${lab("w3l",-500,760,"middle",42)}${lab("w3r",500,760,"middle",42)}${lab("c3l",-752,60,"start",32)}${lab("c3r",752,60,"end",32)}`;
+    legend=`<span><i style="background:${sc(0.2)}"></i>More points per shot than the league from there</span><span><i style="background:${sc(-0.2)}"></i>Fewer</span><span><i style="background:${css("--soft")}"></i>About the same, or under 30 shots</span>`;}
+  return `<svg viewBox="0 0 1520 1080" width="100%" role="img" aria-label="Shot chart"><defs><clipPath id="cl${uid}"><rect x="0" y="0" width="1520" height="${B}"/></clipPath></defs><rect x="0" y="0" width="1520" height="${B}" fill="var(--soft)" opacity=".45"/>${body}${mode==="zones"?"":""}<g>${lines}</g><rect x="0" y="${B}" width="1520" height="${1080-B}" fill="var(--surface)"/><line x1="0" x2="1520" y1="${B}" y2="${B}" ${ln}/></svg><div class="legend" style="margin-top:6px">${legend}</div>`;
+}
+function zoneTable(D){const row=(lab,a,m,ex,v)=>a?`<tr><td class="l">${lab}</td><td class="mono">${a}</td><td class="mono">${(100*m/a).toFixed(0)}%</td><td class="mono">${(100*ex/a).toFixed(0)}%</td><td class="mono">${fmt(v*(m-ex)/a,2)}</td></tr>`:`<tr><td class="l">${lab}</td><td class="mono">0</td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td></tr>`;
+  return `<div class="tablewrap" style="border:0"><table><thead><tr><th class="l">Zone</th><th>Shots</th><th>His %</th><th>League %</th><th>Pts/shot vs league</th></tr></thead><tbody>${SZ.map(([z,lab,v])=>row(lab,...D.z[z],v)).join("")}</tbody></table></div>`;}
+async function shotModule(k){
+  const CR=await getJ("shots_career.json"), C=CR[k], sec=document.getElementById("sh-sec"); if(!C||!sec) return; sec.hidden=false;
+  const st={mode:"shots",filt:"all",a:C.seasons[C.seasons.length-1],b:C.seasons[C.seasons.length-1],vs:null};
+  {const q=(QP.get("sh")||"").split("."); if(q.length>=4){ if(["shots","heat","zones"].includes(q[0])) st.mode=q[0]; const a=+q[1],b=+q[2]; if(C.seasons.includes(a)) st.a=a; if(C.seasons.includes(b)&&b>=st.a) st.b=b; else st.b=st.a; if(["all","made","miss"].includes(q[3])) st.filt=q[3]; if(q[4]&&CR[q[4]]&&BYKEY[q[4]]) st.vs=q[4];}}
+  const opts=C.seasons.map(s=>`<option value="${s}">${season(s)}</option>`).join("");
+  const sa=document.getElementById("sh-a"), sb=document.getElementById("sh-b"); sa.innerHTML=opts; sb.innerHTML=opts; sa.value=st.a; sb.value=st.b;
+  ["sh-mode","sh-filt"].forEach(id=>document.querySelectorAll(`#${id} button`).forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===(id==="sh-mode"?st.mode:st.filt))));
+  if(st.vs) document.getElementById("sh-vs").value=BYKEY[st.vs].name;
+  if(QP.get("sh")) setTimeout(()=>{const e=document.getElementById("sh-sec"); if(e) e.scrollIntoView();},300);
+  const seg=(id,key)=>document.querySelectorAll(`#${id} button`).forEach(b=>b.addEventListener("click",()=>{st[key]=b.dataset.v; document.querySelectorAll(`#${id} button`).forEach(x=>x.setAttribute("aria-pressed",x===b)); draw();}));
+  seg("sh-mode","mode"); seg("sh-filt","filt");
+  document.getElementById("sh-all").addEventListener("click",()=>{sa.value=C.seasons[0]; sb.value=C.seasons[C.seasons.length-1]; draw();});
+  sa.addEventListener("input",()=>{if(+sa.value>+sb.value) sb.value=sa.value; draw();}); sb.addEventListener("input",()=>{if(+sb.value<+sa.value) sa.value=sb.value; draw();});
+  const vin=document.getElementById("sh-vs");
+  vin.addEventListener("change",()=>{const p=CORE.players.find(x=>deacc(x.name)===deacc(vin.value.trim())); st.vs=p&&p.k!==k&&CR[p.k]?p.k:null; if(p&&!CR[p.k]) vin.value=""; draw();});
+  document.getElementById("sh-vsx").addEventListener("click",()=>{st.vs=null; vin.value=""; draw();});
+  let tok=0, inter=false;
+  async function draw(){const my=++tok, a=+sa.value, b=+sb.value; document.getElementById("sh-filt").style.opacity=st.mode==="zones"?.4:1;
+    if(inter||QP.get("sh")) setQP({sh:[st.mode,a,b,st.filt,st.vs||""].join(".")}); inter=true;
+    const A=await shotData(k,a,b), V=st.vs?await shotData(st.vs,a,b):null; if(my!==tok) return;
+    const rng=a===b?season(a):`${season(a)} to ${season(b)}`;
+    const panel=(D,name,uid)=>{const tot=SZ.reduce((s,[z])=>s+D.z[z][0],0), made=SZ.reduce((s,[z])=>s+D.z[z][1],0);
+      return `<div class="card"><h3>${esc(name)} <span class="cap" style="text-transform:none;letter-spacing:0">${rng} · ${tot} shots, ${tot?Math.round(100*made/tot):0}% made</span></h3>${tot?courtSVG(D,st.mode,st.filt,uid):`<p class="cap">No shots in these seasons.</p>`}${tot?zoneTable(D):""}</div>`;};
+    document.getElementById("sh-grid").innerHTML=V?panel(A,BYKEY[k].name,"a")+panel(V,BYKEY[st.vs].name,"b"):
+      `<div class="card">${courtSVG(A,st.mode,st.filt,"a")}</div><div class="card"><h3>${rng}</h3>${zoneTable(A)}<p class="cap">${SZ.reduce((s,[z])=>s+A.z[z][0],0)} shots. Zones under about 30 shots are mostly noise. League % = league average in the same seasons, weighted by his shots in each. Points per shot ignore free throws and and-ones.</p></div>`;}
+  wireShare("shshare"); draw();
+}
+
+// ---------------- interactive tools (24 Nov)
+function wcorr(a,b,w){const sw=d3.sum(w),ma=d3.sum(a.map((v,i)=>v*w[i]))/sw,mb=d3.sum(b.map((v,i)=>v*w[i]))/sw;let c=0,va=0,vb=0;a.forEach((v,i)=>{c+=w[i]*(v-ma)*(b[i]-mb);va+=w[i]*(v-ma)**2;vb+=w[i]*(b[i]-mb)**2;});return va&&vb?c/Math.sqrt(va*vb):0;}
+async function viewBuild(){
+  await needDet();
+  const Wt=CORE.weights, R=CORE.players.filter(p=>p.tier==="main"&&DET[p.k]&&DET[p.k].wf);
+  const dev=R.map(p=>Wt.map((w,i)=>DET[p.k].wf[i][1]/w.pir_scaled)), net=R.map(p=>p.net), pw=R.map(p=>p.poss);
+  const PRE={pir:Wt.map(w=>w.pir), learned:Wt.map(w=>+(w.box/0.3115).toFixed(1)), points:Wt.map(w=>({"2FGM":2,"3FGM":3,"FTM":1})[w.feat]||0)};
+  const score=ws=>dev.map(d=>d3.sum(d.map((v,i)=>v*ws[i])));
+  const ref={pir:wcorr(score(PRE.pir),net,pw), learned:wcorr(score(PRE.learned),net,pw), points:wcorr(score(PRE.points),net,pw)};
+  let ws=PRE.pir.slice(); {const q=(QP.get("w")||"").split(",").map(Number); if(q.length===Wt.length&&q.every(v=>isFinite(v))) ws=q.map(v=>Math.max(-4,Math.min(4,v)));}
+  app.innerHTML=`<section><div class="kicker">Play with the weights</div><h2>Make your own PIR</h2>
+   <p class="prose">PIR adds up box-score events with fixed values: +2 for a made two, −1 for a turnover, and so on. Set your own values below and see two things at once: which players come out on top, and how closely your rating agrees with what actually happened on the floor (the on-court impact of the ${R.length} regulars).</p>
+   <p class="cap">Ideas to try: start from PIR and set <b>Missed 2</b> and <b>Missed 3</b> to −2, so misses hurt more; or drop <b>Off. rebound</b> to 0 and raise <b>Steal</b> to +3. Watch the agreement number and your top 10.</p>
+   <div class="controls"><span class="cap">Start from:</span><div class="seg" id="bp"><button data-v="pir" aria-pressed="true">PIR</button><button data-v="learned" aria-pressed="false">Learned from the data</button><button data-v="points" aria-pressed="false">Points only</button></div></div>
+   <div class="grid2" style="grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)">
+    <div class="card" id="bsl"></div>
+    <div><div class="card"><div class="stat"><b id="br">—</b><span>agreement with on-court impact (correlation across the ${R.length} regulars, weighted by playing time; 1 = perfect)</span></div><div id="c-bg" class="plot" style="margin-top:8px"></div></div>
+     <div class="card"><h3>Your top 10</h3><div class="tablewrap" style="border:0"><table><thead><tr><th class="l">Player</th><th>Your rating</th><th>On-court impact</th><th class="l">Group</th></tr></thead><tbody id="btop"></tbody></table></div></div></div></div>
+   <div class="card"><h3>Your rating against on-court impact</h3><div id="c-bs" class="plot"></div><p class="cap htr"><b>How to read:</b> Each dot = one regular. Horizontal: your rating (per 100 possessions, compared with an average regular). Vertical: on-court impact. The tighter the cloud around a rising line, the better your values describe what wins. Hover a dot for the player.</p></div>
+   <p class="cap htr"><b>Fair warning:</b> this is a quick check against our own on-court impact, on the same seasons. The proper test, on lineups in seasons the ratings had never seen, is on <a href="#metrics">Why not PIR</a>; there the learned values beat PIR by +0.99 [0.39, 1.62].</p></section>`;
+  const box=document.getElementById("bsl");
+  box.innerHTML=`<h3>Value of each event</h3>`+Wt.map((w,i)=>`<div class="bwrow"><label for="bw${i}">${w.event}</label><input id="bw${i}" type="range" min="-4" max="4" step="0.1" value="${ws[i]}"><span id="bv${i}">${fmt(ws[i])}</span></div>`).join("")+`<p class="cap">Values in PIR's units (a made two = +2 in PIR). Only the ratios matter.</p>${shareBtn("bshare")}`;
+  const upd=()=>{Wt.forEach((w,i)=>{document.getElementById("bv"+i).textContent=fmt(ws[i]);}); setQP({w:ws.map(v=>+v.toFixed(1)).join(",")});
+    const sc=score(ws), r=wcorr(sc,net,pw), mean=d3.sum(sc.map((v,i)=>v*pw[i]))/d3.sum(pw), pts=R.map((p,i)=>({p,x:sc[i]-mean,y:net[i]}));
+    document.getElementById("br").textContent=r.toFixed(2);
+    const g=document.getElementById("c-bg"), refs=[{n:"PIR",v:ref.pir},{n:"Learned",v:ref.learned},{n:"Points only",v:ref.points}];
+    g.replaceChildren(Plot.plot({width:W(g),height:84,marginTop:8,marginBottom:30,marginRight:16,style:sty(),x:{domain:[Math.min(-0.1,r,...refs.map(d=>d.v))-0.05,1],label:"agreement →"},y:{axis:null},
+      marks:[Plot.ruleX([0],{stroke:css("--muted")}),Plot.tickX(refs,{x:"v",stroke:css("--muted"),strokeWidth:2}),Plot.text(refs,{x:"v",text:"n",dy:-16,fill:css("--muted"),fontSize:11}),
+        Plot.dot([r],{x:d=>d,r:8,fill:css("--accent")}),Plot.text([r],{x:d=>d,text:()=>"You",dy:18,fill:css("--accent"),fontWeight:700})]}));
+    const top=pts.slice().sort((a,b)=>b.x-a.x).slice(0,10);
+    document.getElementById("btop").innerHTML=top.map(d=>{const t=tier(d.p);return `<tr><td><a href="#p-${d.p.k}">${esc(d.p.name)}</a></td><td class="mono">${fmt(d.x)}</td><td class="mono">${fmt(d.p.net)}</td><td class="l"><span class="tag ${t.c}">${t.t}</span></td></tr>`;}).join("");
+    const s2=document.getElementById("c-bs");
+    s2.replaceChildren(Plot.plot({width:W(s2),height:360,marginBottom:42,marginRight:16,style:sty(),x:{label:"your rating →",grid:true},y:{label:"↑ on-court impact",grid:true},
+      marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.ruleX([0],{stroke:css("--muted")}),Plot.dot(pts,{x:"x",y:"y",r:3,fill:css("--accent"),fillOpacity:.5}),Plot.linearRegressionY(pts,{x:"x",y:"y",stroke:css("--box"),ci:0}),
+        Plot.tip(pts,Plot.pointer({x:"x",y:"y",title:d=>`${d.p.name}\nyour rating ${fmt(d.x)} · impact ${fmt(d.y)}`}))]}));};
+  let t0; Wt.forEach((w,i)=>document.getElementById("bw"+i).addEventListener("input",e=>{ws[i]=+e.target.value; document.querySelectorAll("#bp button").forEach(b=>b.setAttribute("aria-pressed","false")); clearTimeout(t0); t0=setTimeout(upd,40);}));
+  document.querySelectorAll("#bp button").forEach(b=>b.addEventListener("click",()=>{ws=PRE[b.dataset.v].slice(); Wt.forEach((w,i)=>document.getElementById("bw"+i).value=ws[i]); document.querySelectorAll("#bp button").forEach(x=>x.setAttribute("aria-pressed",x===b)); upd();}));
+  if(!PRE.pir.every((v,i)=>v===ws[i])) document.querySelectorAll("#bp button").forEach(b=>b.setAttribute("aria-pressed","false"));
+  wireShare("bshare"); upd();
+}
+async function viewExplore(){
+  await needDet();
+  const cols=CORE.prof_cols, ix=c=>cols.indexOf(c), R=CORE.players.filter(p=>p.tier==="main"&&DET[p.k]);
+  const pv=c=>p=>{const v=DET[p.k].p[ix(c)];return ["ts","p3","ft","tpr"].includes(c)?100*v:v;};
+  const GR=[["Ratings",[["net","On-court impact",p=>p.net],["off","Offense (on-court)",p=>p.off],["def","Defense (on-court)",p=>p.def],["box","Learned box score per 100",p=>p.box],["pir100","PIR per 100",p=>p.pir100],["poss","Possessions played",p=>p.poss]]],
+    ["Scoring",[["pts","Points per 100",pv("pts")],["usg","Usage (shots + turnovers per 100)",pv("usg")],["ts","True shooting %",pv("ts")],["tpr","Share of shots from three %",pv("tpr")],["p3","3-point %",pv("p3")],["ft","Free throw %",pv("ft")]]],
+    ["Passing",[["ast","Assists per 100",pv("ast")],["tov","Turnovers per 100",pv("tov")]]],
+    ["Defense & rebounding",[["stl","Steals per 100",pv("stl")],["blk","Blocks per 100",pv("blk")],["oreb","Offensive rebounds per 100",pv("oreb")],["dreb","Defensive rebounds per 100",pv("dreb")]]],
+    ["Fouls",[["fd","Fouls drawn per 100",pv("fd")],["pf","Fouls committed per 100",pv("pf")]]]];
+  const F=GR.flatMap(g=>g[1]), FI=Object.fromEntries(F.map(f=>[f[0],f]));
+  const PRE=[
+    {id:"pir",q:"Where does PIR mislead?",x:"pir100",y:"net",c:"group",note:"Each player's PIR per 100 possessions against what his team actually did with him on the floor. Players well above the line helped their team more than their PIR says (often defenders, screeners, smart passers); players well below collect PIR that did not turn into winning."},
+    {id:"od",q:"Offense or defense?",x:"off",y:"def",c:"group",note:"Right = his team scored more with him on the floor; up = it allowed less. The two barely go together (correlation 0.08): only 4 of the 615 are above +2 at both ends, against 29 at offense and 43 at defense."},
+    {id:"eff",q:"Volume or efficiency?",x:"usg",y:"ts",c:"impact",note:"You might expect players who take more of the shots to shoot worse. Among these regulars the line is almost flat (−0.05): high-volume players shoot about as well as the rest. Colour shows who also helped his team win."},
+    {id:"box",q:"What does the box score catch?",x:"box",y:"net",c:"group",note:"The learned box score against on-court impact. They agree far more than PIR does (correlation 0.59 against 0.24; try “Where does PIR mislead?”). What is left over is what the box score cannot see, such as spacing, screens and positioning on defense."},
+    {id:"role",q:"Bigs and playmakers",x:"ast",y:"dreb",c:"impact",note:"Up = rebounders, right = passers. The two roles rarely meet (correlation −0.46). Colour shows on-court impact: the players who helped most are spread across both roles."}];
+  let st={x:"pir100",y:"net",c:"group",sel:[],pre:"pir"};
+  {const pr=QP.get("q"); if(pr&&PRE.find(p=>p.id===pr)){const P=PRE.find(p=>p.id===pr); st={...st,x:P.x,y:P.y,c:P.c,pre:P.id};}
+   else if(QP.get("x")&&FI[QP.get("x")]&&FI[QP.get("y")]){st={...st,x:QP.get("x"),y:QP.get("y"),c:QP.get("c")||"group",pre:null};}
+   st.sel=(QP.get("sel")||"").split(".").filter(k=>BYKEY[k]).slice(0,10);}
+  const opt=GR.map(([g,fs])=>`<optgroup label="${g}">${fs.map(f=>`<option value="${f[0]}">${f[1]}</option>`).join("")}</optgroup>`).join("");
+  app.innerHTML=`<section><div class="kicker">Any stat against any stat</div><h2>Explore</h2>
+   <p class="prose">The ${R.length} regulars (3,000+ possessions, 2008–09 to 2025–26), career numbers. Start with a question, or pick your own axes below. Hover a dot for the player; click players to collect them (up to 10) and compare them.</p>
+   <div class="controls"><span class="cap">Start with a question:</span><div class="seg" id="ex-pre" style="flex-wrap:wrap">${PRE.map(p=>`<button data-v="${p.id}" aria-pressed="${p.id===st.pre}">${p.q}</button>`).join("")}</div></div>
+   <details id="ex-custom" style="max-width:none"><summary>Or choose your own axes</summary>
+    <div class="controls"><label>Across <select id="ex-x">${opt}</select></label><label>Up <select id="ex-y">${opt}</select></label>
+    <label>Colour <select id="ex-c"><option value="group">Group (on-court impact)</option><option value="impact">On-court impact (shade)</option><option value="era">First season</option><option value="none">None</option></select></label></div></details>
+   <div class="controls"><label>Find <input id="ex-q" type="search" list="plist" placeholder="Highlight a player" style="width:190px"></label>${shareBtn("exshare")}</div>
+   <div class="card"><p class="prose" id="ex-note" style="margin:0 0 8px"></p><div id="c-ex" class="plot"></div><p class="cap" id="ex-cap"></p><p class="cap htr"><b>How to read:</b> Each dot = one regular. The grey line is the straight-line trend. A pattern describes these 615 careers; it does not show that one thing causes the other.</p></div>
+   <div class="controls" id="ex-sel"></div></section>`;
+  const xs=document.getElementById("ex-x"), ys=document.getElementById("ex-y"), cs=document.getElementById("ex-c"), q=document.getElementById("ex-q");
+  const mix=(a,b,t)=>d3.interpolateRgb(css(a),css(b))(t);
+  const G={"Clearly above average":css("--accent"),"Probably above average":mix("--accent","--pir",.55),"Can't tell from average":css("--pir"),"Probably below average":mix("--down","--pir",.55),"Clearly below average":css("--down"),"Too little data":css("--pir")};
+  const setUI=()=>{xs.value=st.x; ys.value=st.y; cs.value=st.c; document.querySelectorAll("#ex-pre button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===st.pre));};
+  const drawSel=()=>{document.getElementById("ex-sel").innerHTML=st.sel.length?`<span class="cap">Selected:</span> ${st.sel.map(k=>`<span class="tag t-ct">${esc(BYKEY[k].name)} <button data-x="${k}" aria-label="Remove" style="all:unset;cursor:pointer;margin-left:4px">×</button></span>`).join(" ")} <a class="more" style="margin:0" href="#vs-${st.sel.join("-")}">Compare these →</a>`:`<span class="cap">Click dots to collect players for Compare.</span>`;
+    document.querySelectorAll("#ex-sel button[data-x]").forEach(b=>b.addEventListener("click",()=>{st.sel=st.sel.filter(k=>k!==b.dataset.x); draw();}));};
+  function note(){const P=PRE.find(p=>p.id===st.pre); if(P) return P.note;
+    let n=`${FI[st.x][1]} against ${FI[st.y][1]}.`;
+    if(st.x==="poss"||st.y==="poss") n+=" Careful: coaches give more minutes to better players, so playing time follows quality rather than causing it.";
+    if(st.x===st.y) n+=" Both axes show the same number.";
+    return n;}
+  function draw(){const fx=FI[st.x][2], fy=FI[st.y][2], hk=(CORE.players.find(p=>deacc(p.name)===deacc(q.value.trim()))||{}).k;
+    const pts=R.map(p=>({p,x:fx(p),y:fy(p),g:tier(p).t,era:+String(p.seasons).slice(0,4),net:p.net}));
+    const r=wcorr(pts.map(d=>d.x),pts.map(d=>d.y),pts.map(()=>1)), el=document.getElementById("c-ex");
+    const hl=pts.filter(d=>d.p.k===hk||st.sel.includes(d.p.k));
+    const fill=st.c==="group"?(d=>G[d.g]):st.c==="era"?"era":st.c==="impact"?"net":(()=>css("--accent"));
+    const color=st.c==="era"?{type:"linear",domain:[2008,2025],range:[css("--down"),css("--accent")],legend:true,label:"first season"}:st.c==="impact"?{type:"diverging",domain:[-6,6],pivot:0,range:[css("--down"),css("--pir"),css("--accent")],legend:true,label:"on-court impact"}:undefined;
+    const pl=Plot.plot({width:W(el),height:Math.min(560,Math.max(360,W(el)*0.6)),marginBottom:44,marginRight:16,style:sty(),
+      x:{label:FI[st.x][1]+" →",grid:true},y:{label:"↑ "+FI[st.y][1],grid:true},color,
+      marks:[Plot.dot(pts,{x:"x",y:"y",r:3.5,fill,fillOpacity:.6}),Plot.linearRegressionY(pts,{x:"x",y:"y",stroke:css("--muted"),ci:0}),
+        Plot.dot(hl,{x:"x",y:"y",r:7,fill:"none",stroke:css("--ink"),strokeWidth:2}),Plot.text(hl,{x:"x",y:"y",text:d=>d.p.name,dy:-14,fill:css("--ink"),fontWeight:600}),
+        Plot.tip(pts,Plot.pointer({x:"x",y:"y",title:d=>`${d.p.name} · ${d.p.team}\n${FI[st.x][1]}: ${d.x.toFixed(1)}\n${FI[st.y][1]}: ${d.y.toFixed(1)}\n${d.g}`}))]});
+    pl.addEventListener("click",()=>{const v=pl.value; if(!v) return; const k=v.p.k; st.sel=st.sel.includes(k)?st.sel.filter(x=>x!==k):[...st.sel,k].slice(-10); draw();});
+    el.replaceChildren(pl);
+    setQP(st.pre?{q:st.pre,sel:st.sel.join(".")}:{x:st.x,y:st.y,c:st.c,sel:st.sel.join(".")});
+    document.getElementById("ex-note").textContent=note();
+    document.getElementById("ex-cap").innerHTML=(st.c==="group"?`<div class="legend">${Object.entries(G).slice(0,5).map(([k,c])=>`<span><i style="background:${c}"></i>${k}</span>`).join("")}</div>`:"")+`Correlation ${r.toFixed(2)} across ${pts.length} regulars (1 = perfect line, 0 = no link).`;
+    drawSel();}
+  document.querySelectorAll("#ex-pre button").forEach(b=>b.addEventListener("click",()=>{const P=PRE.find(p=>p.id===b.dataset.v); st={...st,x:P.x,y:P.y,c:P.c,pre:P.id}; setUI(); draw();}));
+  const custom=()=>{st.x=xs.value; st.y=ys.value; st.c=cs.value; st.pre=null; setUI(); draw();};
+  xs.addEventListener("input",custom); ys.addEventListener("input",custom); cs.addEventListener("input",()=>{st.c=cs.value; draw();}); q.addEventListener("change",draw);
+  if(!st.pre) document.getElementById("ex-custom").open=true;
+  wireShare("exshare"); setUI(); draw();
+}
+async function viewDist(){
+  const [G,E]=await Promise.all([getJ("games.json"),getJ("extra.json")]);
+  // player-seasons: per-game PIR and learned box, possessions per game (10+ games)
+  const PS=[]; Object.entries(G).forEach(([k,gs])=>{const by={}; gs.forEach(x=>{(by[x[0]]=by[x[0]]||[]).push(x);}); Object.entries(by).forEach(([s,a])=>{if(a.length<10||!BYKEY[k]) return; PS.push({k,s:+s,name:BYKEY[k].name,pir:d3.mean(a,x=>x[6]),box:d3.mean(a,x=>x[7]),n:d3.mean(a,x=>x[5]),g:a.length});});});
+  const TS=TEAMS.map(t=>{const x=E.team[`${t.s}_${t.t}`]||{}; return {k:t.t,s:t.s,name:t.name,net:t.net,w:t.w,pace:x.pace,efg:x.off&&100*x.off[0],tov:x.off&&100*x.off[1],orb:x.off&&100*x.off[2],ftr:x.off&&100*x.off[3]};});
+  const M={pir:["Players: PIR per game",PS,"pir"],box:["Players: learned box score per game",PS,"box"],n:["Players: possessions per game",PS,"n"],
+    net:["Teams: net points per 100",TS,"net"],pace:["Teams: pace (possessions per game)",TS,"pace"],efg:["Teams: eFG%",TS,"efg"],tov:["Teams: turnover %",TS,"tov"],orb:["Teams: offensive rebound %",TS,"orb"],ftr:["Teams: free-throw rate",TS,"ftr"]};
+  app.innerHTML=`<section><div class="kicker">How a number is spread out, season by season</div><h2>Distributions</h2>
+   <p class="prose">Pick a number. Each box shows how it was spread across players (or teams) in one season: the box holds the middle half, the line inside is the median, the whiskers reach the usual range and dots are the outliers. Add a player or a team to follow him across the seasons.</p>
+   <p class="cap">Try: <a href="#" data-try="pace|">how the game got faster (team pace)</a> · <a href="#" data-try="pir|Vassilis Spanoulis">one career against the league (Spanoulis, PIR per game)</a> · <a href="#" data-try="efg|">shooting over the years (eFG%)</a></p>
+   <div class="controls"><label>Number <select id="ds-m"><optgroup label="Players">${Object.entries(M).filter(([k,v])=>v[1]===PS).map(([k,v])=>`<option value="${k}">${v[0].replace("Players: ","")}</option>`).join("")}</optgroup><optgroup label="Teams">${Object.entries(M).filter(([k,v])=>v[1]===TS).map(([k,v])=>`<option value="${k}">${v[0].replace("Teams: ","")}</option>`).join("")}</optgroup></select></label>
+    <label>Follow <input id="ds-q" type="search" list="dslist" placeholder="A player or team" style="width:200px"></label><datalist id="dslist"></datalist></div>
+   <div class="card"><div id="c-ds" class="plot"></div><p class="cap" id="ds-cap"></p><p class="cap htr"><b>How to read:</b> One box per season (regular season and playoffs for players, regular season for teams). Players need 10+ games in the season. The orange line follows the player or team you picked.</p></div></section>`;
+  const ms=document.getElementById("ds-m"), q=document.getElementById("ds-q");
+  const fill=()=>{const D=M[ms.value][1]; document.getElementById("dslist").innerHTML=[...new Set(D.map(d=>d.name))].sort().map(n=>`<option value="${esc(n)}">`).join("");};
+  function draw(){const [lab,D,f]=M[ms.value], rows=D.filter(d=>d[f]!=null&&isFinite(d[f])), el=document.getElementById("c-ds");
+    const who=q.value.trim(), tr=who?rows.filter(d=>deacc(d.name)===deacc(who)).sort((a,b)=>a.s-b.s):[];
+    el.replaceChildren(Plot.plot({width:W(el),height:400,marginBottom:W(el)<620?36:64,marginRight:16,style:sty(),x:{label:null,tickFormat:s=>W(el)<620?("'"+String(s+1).slice(2)):season(s),tickRotate:W(el)<620?0:-35},y:{label:"↑ "+lab.split(": ")[1],grid:true},
+      marks:[Plot.boxY(rows,{x:"s",y:f,fill:css("--soft"),stroke:css("--muted")}),
+        ...(tr.length?[Plot.line(tr,{x:"s",y:f,stroke:css("--accent"),strokeWidth:2.5}),Plot.dot(tr,{x:"s",y:f,fill:css("--accent"),r:5}),Plot.tip(tr,Plot.pointer({x:"s",y:f,title:d=>`${d.name}\n${season(d.s)}: ${d[f].toFixed(1)}`}))]:[])]}));
+    document.getElementById("ds-cap").textContent=`${rows.length.toLocaleString("en")} ${D===PS?"player-seasons":"team-seasons"}.`+(who&&!tr.length?` "${who}" not found for this number.`:"");}
+  ms.addEventListener("input",()=>{fill();q.value="";draw();}); q.addEventListener("change",draw); fill(); draw();
+  app.querySelectorAll("a[data-try]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault(); const [m,w]=a.dataset.try.split("|"); ms.value=m; fill(); q.value=w; draw();}));
+}
+
+function viewStart(){
+  const T=BYKEY["P005791"];
+  app.innerHTML=`<section><div class="kicker">Two-minute guide</div><h2>Start here</h2>
+   <p class="prose lede" style="margin-top:6px">This site rates EuroLeague players from 2008–09 to 2025–26 using every possession: who was on the floor, and how many points each side scored. The question behind everything is simple: <b>when he plays, does his team outscore the opponent?</b></p></section>
+  <section><h2>Three numbers to know</h2><div class="grid3">
+   <div class="card"><h3>On-court impact</h3><div class="stat"><b>${T?fmt(T.net):"+7.8"}</b><span>Walter Tavares</span></div><p>How many points per 100 possessions (about a game and a half) his team gains with him on the floor, compared with an average regular, after accounting for the other nine players. Zero = average.</p></div>
+   <div class="card"><h3>Range</h3><div style="margin:10px 0">${T?strip(T,220,18):""}</div><p>How sure we are. Darker = more likely. Lots of minutes give a narrow range; few minutes give a wide one. Players whose whole range sits above (or below) zero are tagged <span class="tag t-cu">Clearly above average</span> (or below).</p></div>
+   <div class="card"><h3>Learned box score</h3><div class="stat"><b>+0.99</b><span>better than PIR at telling which lineups win</span></div><p>The same events as PIR (points, rebounds, assists, turnovers…), but each one is worth what the data says it is worth, not a fixed +1 or −1. For example, a missed two costs more than PIR thinks.</p></div></div></section>
+  <section><h2>Why not just use PIR?</h2><p class="prose">PIR counts the right things but weighs them wrongly, and it ignores everything that never reaches the box score: screens, spacing, defensive positioning. When a coach puts a five on the floor that PIR likes, it does not outscore the opponent by much more than other fives. The learned box score and the on-court impact do better. <a href="#metrics">See the test →</a></p></section>
+  <section><h2>Where to go next</h2><div class="doors" style="margin-top:6px">
+   <a class="door" href="#players"><b>Find a player</b><span>Every regular, with his range</span></a><a class="door" href="#vs"><b>Compare</b><span>Up to 10 players side by side</span></a>
+   <a class="door" href="#build"><b>Make your own PIR</b><span>Set the values yourself</span></a><a class="door" href="#explore"><b>Explore</b><span>Start with a question</span></a></div>
+   <p class="cap" style="margin-top:12px">Also: <a href="#season">2026–27 standings chances</a> · <a href="#teams">teams</a> · <a href="#glossary">glossary</a> · <a href="#how">how it works</a></p></section>
+  <section><h2>What this site does not claim</h2><div class="prose"><ul>
+   <li>Ratings describe whole careers here, not current form; a player who changed late in his career is averaged over all of it.</li>
+   <li>A single game says very little. Even a full season leaves a wide range for most players.</li>
+   <li>Players with few possessions are pulled toward average on purpose: there is not enough evidence to say more.</li>
+   <li>Nothing here is a betting tool. The 2026–27 chances describe the standings, not single games.</li></ul></div></section>`;
+}
+
+// ---------------- titles and awards (24 Nov)
+const AWL={CHAMP:["EuroLeague champion","🏆"],MVP:["MVP","★"],F4MVP:["Final Four MVP","★"],DEF:["Best Defender","🛡"],RS:["Rising Star","↗"],TOP:["Top scorer","●"],ALL1:["All-EuroLeague 1st team",""],ALL2:["All-EuroLeague 2nd team",""],DEC:["All-Decade Team",""],A25:["25th Anniversary Team",""],LEG:["EuroLeague Legend",""]};
+const AWORD=["CHAMP","MVP","F4MVP","DEF","RS","TOP","ALL1","ALL2","DEC","A25","LEG"];
+function awYears(a,ys){ if(a==="DEC") return ys.map(y=>y===2009?"2000–10":"2010–20").join(", "); if(a==="A25") return "2025"; if(a==="LEG") return ys.join(", ");
+  const runs=[]; ys.forEach(y=>{const r=runs[runs.length-1]; if(r&&y===r[1]+1) r[1]=y; else runs.push([y,y]);});
+  return runs.map(([a,b])=>a===b?season(a):b===a+1?season(a)+", "+season(b):season(a)+" to "+season(b)).join(", ");}
+function awardSummary(list,short){ if(!list||!list.length) return ""; const by={}; list.forEach(([s,a])=>(by[a]=by[a]||[]).push(s));
+  const parts=AWORD.filter(a=>by[a]).map(a=>{const n=by[a].length, lab=AWL[a][0], ys=awYears(a,by[a]);
+    if(short) return ({CHAMP:"🏆",ALL1:"All-EL 1st",ALL2:"All-EL 2nd",DEC:"All-Decade",A25:"All-25",LEG:"Legend",TOP:"Top scorer"}[a]||lab)+(n>1?" ×"+n:"");
+    return `<span class="aw" title="${esc(lab)}: ${ys}">${AWL[a][1]?AWL[a][1]+" ":""}${lab}${n>1?" ×"+n:""} <small>${ys}</small></span>`;});
+  return short?parts.join(" · "):parts.join("");}
+function seasonRanks(G){ // per season: players with ≥35% of the season's top possessions, ranked by PIR/100 and learned box/100
+  const S={}; Object.entries(G).forEach(([k,gs])=>gs.forEach(x=>{const key=x[0]+"|"+k, d=S[key]=S[key]||{s:x[0],k,n:0,pir:0,box:0}; d.n+=x[5]; d.pir+=x[6]; d.box+=x[7];}));
+  const by={}; Object.values(S).forEach(d=>(by[d.s]=by[d.s]||[]).push(d)); const R={};
+  Object.entries(by).forEach(([s,L])=>{const mx=d3.max(L,d=>d.n), Q=L.filter(d=>d.n>=0.35*mx).map(d=>({...d,p100:100*d.pir/d.n,b100:100*d.box/d.n}));
+    const rp=Q.slice().sort((a,b)=>b.p100-a.p100), rb=Q.slice().sort((a,b)=>b.b100-a.b100);
+    R[s]={n:Q.length,rp:Object.fromEntries(rp.map((d,i)=>[d.k,i+1])),rb:Object.fromEntries(rb.map((d,i)=>[d.k,i+1])),topP:rp[0],topB:rb[0]};});
+  return R;}
+async function viewAwards(){
+  const [A,G]=await Promise.all([getJ("awards.json"),getJ("games.json")]); const R=seasonRanks(G), P=A.p;
+  const who=(s,a)=>Object.keys(P).filter(k=>P[k].some(x=>x[0]===s&&x[1]===a));
+  const picks=[]; Object.entries(P).forEach(([k,L])=>L.forEach(([s,a])=>{if((a==="ALL1"||a==="ALL2")&&R[s]&&R[s].rp[k]) picks.push({k,s,a,rp:R[s].rp[k],rb:R[s].rb[k],n:R[s].n});}));
+  const med=v=>d3.median(v), t10=f=>picks.filter(d=>d[f]<=10).length/picks.length;
+  // AUC within each season (share of pick / non-pick pairs where the pick scores higher), weighted by picks
+  const aucOf=get=>{let num=0,den=0; Object.entries(R).forEach(([s,r])=>{const ks=Object.keys(r.rp), pk=new Set(picks.filter(d=>d.s==s).map(d=>d.k)); if(!pk.size) return;
+      const P=ks.filter(k=>pk.has(k)).map(k=>get(r,k)).filter(v=>v!=null), N=ks.filter(k=>!pk.has(k)).map(k=>get(r,k)).filter(v=>v!=null); if(!P.length||!N.length) return;
+      let w=0; P.forEach(p=>N.forEach(n=>{w+=p>n?1:p===n?0.5:0;})); num+=pk.size*w/(P.length*N.length); den+=pk.size;}); return num/den;};
+  const AUC={pir:aucOf((r,k)=>-r.rp[k]), box:aucOf((r,k)=>-r.rb[k]), imp:aucOf((r,k)=>BYKEY[k]&&BYKEY[k].tier==="main"?BYKEY[k].net:null)};
+  const seasons=Object.keys(A.champ).map(Number).sort((a,b)=>b-a);
+  const nm=k=>BYKEY[k]?`<a href="#p-${k}">${esc(BYKEY[k].name)}</a>`:k, rk=(s,k)=>R[s]&&R[s].rp[k]?`<br><span class="cap">PIR #${R[s].rp[k]} · box #${R[s].rb[k]}</span>`:"";
+  app.innerHTML=`<section><div class="kicker">Titles, awards and what the numbers say</div><h2>Awards vs ratings</h2>
+   <p class="prose">Who won the EuroLeague and its individual awards each season since 2008–09, next to how the same players ranked that season by PIR and by the learned box score (per 100 possessions, among players with at least 35% of the season's top playing time). Awards are voted by media, fans or coaches, who also weigh team success, so nobody should expect them to follow any single number.</p></section>
+  <section><h2>Do the All-EuroLeague teams follow PIR?</h2><div class="grid2">
+   <div class="card"><div class="stat"><b>#${med(picks.map(d=>d.rp))}</b><span>median PIR rank of the ${picks.length} All-EuroLeague picks that season; ${Math.round(100*t10("rp"))}% were in the PIR top 10</span></div>
+    <div class="stat" style="margin-top:14px"><b>#${med(picks.map(d=>d.rb))}</b><span>median rank by the learned box score; ${Math.round(100*t10("rb"))}% in its top 10</span></div>
+    <div class="stat" style="margin-top:14px"><b>${AUC.pir.toFixed(2)} · ${AUC.box.toFixed(2)} · ${AUC.imp.toFixed(2)}</b><span>how often a pick out-ranks a non-pick of the same season (AUC; 0.5 = coin flip, 1 = always): PIR/100 · learned box/100 · career on-court impact</span></div>
+    <p class="prose cap" style="margin-top:12px">These numbers measure which rating looks most like the voters, not which rating is right: voters see points, PIR and team results. Career on-court impact is not specific to the season, which works against it here. The selections sit much closer to the top of the PIR list than to the top of the learned box score. One reading: voters reward the same things PIR counts (volume scoring, rebounds) and team success, while the learned box score also rewards things like steals and avoiding missed shots. It is a description, not proof of what voters think.</p></div>
+   <div class="card"><div id="c-aw" class="plot"></div><p class="cap htr"><b>How to read:</b> Each dot = one All-EuroLeague pick. Left: his rank that season by PIR per 100; right: by the learned box score. Rank 1 = best in the league that season. Dots near the top = the pick was also among the best by that number; the dashed line is the median.</p></div></div></section>
+  <section><h2>Season by season</h2><div class="tablewrap"><table class="awt"><thead><tr><th class="l">Season</th><th class="l">Champion</th><th class="l">MVP</th><th class="l">Final Four MVP</th><th class="l">Best Defender</th><th class="l">Rising Star</th><th class="l">Top by PIR / 100</th><th class="l">Top by learned box / 100</th></tr></thead><tbody>
+   ${seasons.map(s=>`<tr><td>${season(s)}</td><td class="l"><a href="#t-${s}-${A.champ[s]}">${esc(tname(s,A.champ[s]))}</a></td>${["MVP","F4MVP","DEF","RS"].map(a=>`<td class="l">${who(s,a).map(k=>nm(k)+(a==="MVP"?rk(s,k):"")).join(", ")||"—"}</td>`).join("")}<td class="l">${R[s]?nm(R[s].topP.k)+` <span class="cap">${R[s].topP.p100.toFixed(1)}</span>`:"—"}</td><td class="l">${R[s]?nm(R[s].topB.k)+` <span class="cap">${fmt(R[s].topB.b100,1)}</span>`:"—"}</td></tr>`).join("")}
+   </tbody></table></div><p class="cap htr"><b>How to read:</b> “PIR #3 · box #11” under an MVP = he ranked 3rd by PIR per 100 and 11th by the learned box score that season. Regular season and playoffs counted together. 2019–20 had no Final Four and no awards. Titles and awards from 2000–01 to 2007–08 are shown on player pages; the rankings start in 2008–09 because our play-by-play data starts there.</p></section>
+  <section><h2>Career honours</h2><p class="prose">Honours given for a whole career or decade. Players who played only before 2008–09 are not in our data, so they are listed without a link.</p><div class="grid3">
+   ${[["DEC","All-Decade Teams"],["A25","25th Anniversary Team (2025)"],["LEG","EuroLeague Legends"]].map(([a,t])=>{const L=Object.entries(P).flatMap(([k,v])=>v.filter(x=>x[1]===a).map(x=>({k,y:x[0],n:BYKEY[k]?BYKEY[k].name:k}))).concat(((A.other||{})[a]||[]).map(([y,n])=>({y,n}))).sort((x,y)=>x.y-y.y||x.n.split(" ").pop().localeCompare(y.n.split(" ").pop()));
+     const by=d3.groups(L,d=>d.y); return `<div class="card"><h3>${t}</h3>${by.map(([y,ds])=>`${a==="A25"?"":`<div class="kicker" style="margin-top:8px">${a==="DEC"?(y===2009?"2000–2010":"2010–2020"):y}</div>`}<p class="cap" style="margin:2px 0">${ds.map(d=>d.k?nm(d.k):esc(d.n)).join(", ")}</p>`).join("")}</div>`;}).join("")}
+   </div><p class="cap htr">${esc(A.src)}</p></section>`;
+  const el=document.getElementById("c-aw"), pts=picks.flatMap(d=>[{x:"by PIR",r:d.rp,d},{x:"by learned box",r:d.rb,d}]);
+  el.replaceChildren(Plot.plot({width:W(el),height:360,marginLeft:44,marginBottom:30,style:sty(),fx:{domain:["by PIR","by learned box"],label:null},y:{type:"log",reverse:true,label:"↑ rank that season (1 = best)",grid:true,ticks:[1,2,3,5,10,20,50,100],tickFormat:d=>"#"+d},
+    marks:[Plot.dot(pts,Plot.dodgeX("middle",{fx:"x",y:"r",r:2.6,fill:d=>d.x==="by PIR"?css("--pir"):css("--accent"),fillOpacity:.75,title:p=>`${BYKEY[p.d.k]?BYKEY[p.d.k].name:p.d.k} · ${season(p.d.s)} ${p.d.a==="ALL1"?"1st":"2nd"} team\nPIR #${p.d.rp} · learned box #${p.d.rb} of ${p.d.n}`})),
+      Plot.ruleY([{x:"by PIR",r:med(picks.map(d=>d.rp))},{x:"by learned box",r:med(picks.map(d=>d.rb))}],{fx:"x",y:"r",stroke:css("--ink"),strokeWidth:2,strokeDasharray:"4 3"})]}));
+}
+
+// ---------------- team pages 2026-27 (24 Nov, Asteris «B»): data/teams2026.json, updated weekly
+async function viewTeam26(code){
+  const [D,B,Sx]=await Promise.all([getJ("teams2026.json"),getJ("odds.json"),getJ("season2026.json")]);
+  const X=D.teams[code]; if(!X){app.innerHTML=`<section><p>Team not found. <a href="#season">Season 2026–27</a></p></section>`;return;}
+  const st=Sx.teams.find(t=>t.t===code)||{}, L=B.live||{}, N=L.n, o=(L.teams||[]).find(t=>t.t===code);
+  const p=o?o.p.map(v=>v/N):null, top6=p?p.slice(0,6).reduce((a,b)=>a+b,0):null, top10=p?p.slice(0,10).reduce((a,b)=>a+b,0):null, ep=p?p.reduce((a,v,i)=>a+v*(i+1),0):null;
+  const nm=t=>{const y=D.teams[t];return y?fixName(y.name):t;}, last=TEAMS.find(t=>t.s===2025&&t.t===code);
+  const nW=X.games.filter(g=>g[3]>g[4]).length, G=X.games.length;
+  const ro=X.roster.map(([k,name,gp,sh])=>({k,name,gp,sh,p:k.startsWith("NEW:")?null:BYKEY[k]}));
+  const unk=ro.filter(r=>r.k.startsWith("NEW:")).reduce((a,r)=>a+r.sh,0)/5;
+  app.innerHTML=`<section><a class="back" href="#season">← Season 2026–27</a>
+   <div class="kicker" style="margin-top:10px">Season 2026–27 · regular season · data through round ${D.rmax} (${new Date(D.asof+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}) · updated weekly</div>
+   <h1 style="font-size:clamp(38px,6vw,64px)">${esc(fixName(X.name))}</h1>
+   ${last?`<p class="cap" style="margin-top:8px"><a href="#t-2025-${code}">Last season (2025–26) →</a></p>`:`<p class="cap" style="margin-top:8px">Did not play the 2025–26 EuroLeague season.</p>`}
+   <div class="grid3"><div class="card stat"><b>${nW}–${G-nW}</b><span>record${st.xw!=null?` · ${Math.round(st.xw)} expected wins from the points margin`:""}</span></div>
+    <div class="card stat"><b>${st.mpg!=null?fmt(st.mpg):"—"}</b><span>average points margin per game</span></div>
+    <div class="card stat"><b>${top6!=null?Math.round(100*top6)+"%":"—"}</b><span>chance of a top-6 finish${top10!=null?` · ${Math.round(100*top10)}% top 10 · average finish ${ep.toFixed(1)}`:""} (<a href="#season">how this is estimated</a>)</span></div></div></section>
+  <section><h2>Results</h2><div class="card"><div id="c-res" class="plot"></div><p class="cap htr"><b>How to read:</b> One bar per game, in order: points scored minus points allowed. Above the line = win.</p></div>
+   <div class="tablewrap" style="margin-top:14px"><table><thead><tr><th>Round</th><th class="l">Opponent</th><th class="l">Home / away</th><th>Score</th><th class="l">Result</th></tr></thead><tbody>
+   ${X.games.slice().reverse().map(([r,op,h,pf,pa])=>`<tr><td class="mono">${r}</td><td class="l"><a href="#t26-${op}">${esc(nm(op))}</a></td><td class="l">${h?"Home":"Away"}</td><td class="mono">${pf}–${pa}</td><td class="l"><b>${pf>pa?"W":"L"}</b> <span class="cap">${fmt(pf-pa,0)}</span></td></tr>`).join("")}
+   </tbody></table></div></section>
+  <section><h2>Who has played</h2><p class="prose cap">Share of the team's playing time so far this season, with each player's on-court impact frozen before the season (from 2008–09 to 2025–26 only). Players new to the EuroLeague have no rating yet.</p>
+   <div class="tablewrap"><table><thead><tr><th class="l">Player</th><th>Games</th><th>Share of time</th><th>On-court impact</th><th class="l">Range</th><th class="l">Group</th></tr></thead><tbody>
+   ${ro.map(r=>{const P=r.p;if(!P){const nw=r.k.startsWith("NEW:");return `<tr><td>${esc(r.name)}</td><td class="mono">${r.gp}</td><td class="mono">${Math.round(100*r.sh)}%</td><td class="mono">—</td><td class="l cap">${nw?"no EuroLeague history":"very little history"}</td><td class="l"><span class="tag t-ld">${nw?"New":"Too little data"}</span></td></tr>`;}
+     const tt=tier(P);return `<tr><td><a href="#p-${P.k}">${esc(P.name)}</a></td><td class="mono">${r.gp}</td><td class="mono">${Math.round(100*r.sh)}%</td><td class="mono">${P.tier==="main"?fmt(P.net):"—"}</td><td class="l">${P.tier==="main"?strip(P):""}</td><td class="l"><span class="tag ${tt.c}">${tt.t}</span></td></tr>`;}).join("")}
+   </tbody></table></div>
+   <p class="cap htr"><b>How to read:</b> Share of time = share of the team's play-by-play moments he was on the floor (100% = every minute). Impact = points per 100 possessions he added to his team's margin in earlier seasons, compared with an average regular. ${o?`Weighted by playing time, the players with a rating give this team a strength of ${fmt(o.S,1)} points per 100 possessions compared with an average team; ${Math.round(100*(o.u!=null?o.u:unk))}% of its time went to players new to the EuroLeague, who count as average.`:""}</p></section>`;
+  const el=document.getElementById("c-res"), g=X.games.map(([r,op,h,pf,pa],i)=>({i:i+1,r,op,h,m:pf-pa,s:`${pf}–${pa}`}));
+  el.replaceChildren(Plot.plot({width:W(el),height:220,marginLeft:40,marginBottom:34,style:sty(),x:{label:"round →",tickFormat:i=>g[i-1]?g[i-1].r:"",ticks:g.map(d=>d.i).filter((_,j,a)=>a.length<16||j%2===0)},y:{grid:true,label:"↑ margin"},
+    marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.barY(g,{x:"i",y:"m",fill:d=>d.m>0?css("--accent"):css("--down"),title:d=>`Round ${d.r} · ${d.h?"vs":"at"} ${nm(d.op)} · ${d.s}`}),
+      Plot.tip(g,Plot.pointerX({x:"i",y:"m",title:d=>`Round ${d.r} · ${d.h?"vs":"at"} ${nm(d.op)} · ${d.s}`}))]}));
+}
+
+async function viewPlayer(k){
+  await needDet();
+  const p=BYKEY[k]; if(!p){app.innerHTML=`<section><p>Player not found. <a href="#players">All players</a></p></section>`;return;}
+  const d=DET[k], t=tier(p), cols=CORE.prof_cols;
+  const ix=c=>cols.indexOf(c);
+  const pab=p.pab==null?null:Math.round(p.pab*10);
+  let sent;
+  if(p.tier!=="main") sent=`Only ${p.poss.toLocaleString("en")} possessions: too few to say anything firm about his impact. The box-score profile below is still a fair description of his game.`;
+  else if(p.core) sent=`One of the 32 regulars whose on-court impact is clearly ${p.net>0?"above":"below"} average: about ${fmt(p.net)} points per 100 possessions${p.net>0?" for":" against"} his team, compared with an average regular.`;
+  else sent=`His impact is ${p.pab>=0.5?"more likely positive":"more likely negative"} than not (${pab} in 10 chance of being above average), but the data cannot separate him from an average regular with confidence.`;
+  const roleRows=PROF.map(([c,lab,good])=>{const q=d.q[ix(c)], v=d.p[ix(c)]; if(q==null) return "";
+    const isPct=["ts","p3","ft","tpr"].includes(c); const val=isPct?(100*v).toFixed(1)+"%":v.toFixed(1);
+    return `<div class="row"><span>${lab}${good?"":" <span class='cap'>(lower is better)</span>"}</span><div class="track"><div class="mid"></div><div class="fill" style="width:${q}%;background:${good?"var(--accent)":"var(--pir)"}"></div></div><span class="val">${val} · ${ord(q)}</span></div>`;}).join("");
+  const OO={}; (d.oo||[]).forEach(([s,tm,on,off,n])=>OO[s+"_"+tm]=[on,off]);
+  const ooHtml=d.st.map(([s,tm,n])=>{const o=OO[s+"_"+tm];return `<tr><td>${season(s)}</td><td class="l"><a href="#t-${s}-${tm}">${esc(tname(s,tm))}</a></td><td class="mono">${n.toLocaleString("en")}</td><td class="mono" data-pir="${s}">…</td><td class="mono">${(a=>a?fmt(a[1],2):"—")((d.arc||[]).find(a=>a[0]===s))}</td><td class="mono">${o?fmt(o[0]):"—"}</td><td class="mono">${o?fmt(o[1]):"—"}</td><td class="mono">${o?fmt(o[0]-o[1]):"—"}</td></tr>`;}).join("");
+  const repHtml=(d.rep&&d.rep.length)?`<section><h2>Who comes in for him</h2><p class="prose">When he is substituted out, these teammates most often come in (share of all his substitutions, career).</p><div class="sim">${d.rep.map(([k2,sh,n])=>BYKEY[k2]?`<a href="#p-${k2}"><b>${esc(BYKEY[k2].name)}</b><br><span class="cap">${(100*sh).toFixed(0)}% · ${n} times</span></a>`:"").join("")}</div><p class="cap htr"><b>How to read:</b> Teammates who most often replaced him when he was substituted out, and their share of his substitutions.</p></section>`:"";
+  const simHtml=(d.sim&&d.sim.length)?`<section><h2>Plays like</h2><p class="prose">Closest box-score profiles among players with 1,500+ possessions (scoring, usage, shooting, passing, defense, fouls). Similar style, not similar value.</p><div class="sim">${d.sim.map(k2=>BYKEY[k2]?`<a href="#p-${k2}"><b>${esc(BYKEY[k2].name)}</b><br><span class="cap">${esc(BYKEY[k2].team)} · ${BYKEY[k2].seasons}</span><br><span class="tag ${tier(BYKEY[k2]).c}">${tier(BYKEY[k2]).t}</span></a>`:"").join("")}</div><p class="cap htr"><b>How to read:</b> Players with the most similar box-score profile per 100 possessions (13 stats). Similar style, not similar value.</p></section>`:"";
+  const wfB=d.wf.reduce((a,x)=>a+x[0],0), wfP=d.wf.reduce((a,x)=>a+x[1],0);
+  app.innerHTML=`<section style="padding-top:18px">
+   <a class="back" href="#players">← All players</a>
+   <div class="phead"><div class="wood"><span class="wtag">${t.t}</span><div class="big">${p.tier==="main"?fmt(p.net):"—"}</div><h1>${esc(p.name)}</h1><p>${p.tier==="main"?"points per 100 possessions his team adds with him on the floor, compared with an average regular":"too few possessions for a firm on-court rating"}</p><div id="pbadges" class="awrow"></div></div>
+   <div><div class="kicker">${esc(p.team)} · ${p.seasons} · ${p.poss.toLocaleString("en")} possessions on court</div>
+   <p class="sentence">${sent}</p>
+   <div class="facts">${p.tier==="main"?`<div><b>${fmt(p.off)}</b><span>Offense</span></div><div><b>${fmt(p.def)}</b><span>Defense</span></div><div><b>${p.r5}–${p.r95}</b><span>Rank, 90% range</span></div>`:""}<div><b>${p.pir100.toFixed(1)}</b><span>PIR per 100</span></div></div>
+   <p class="back" style="margin-top:14px"><a href="#vs-${k}">Compare with other players →</a></p></div></div>
+  </section>
+  <section><h2>On-court impact</h2>
+   <div class="card"><div id="c-imp" class="plot"></div>
+   <p class="cap">${p.tier==="main"?`Points per 100 possessions vs an average regular. Shading: 50%, 80% and 95% ranges. ${pab} in 10 chance of being above average. Somewhere between ${ord(p.r5)} and ${ord(p.r95)} of 615 regulars (90% range).`:"Too few possessions for a reliable range."} Offense ${fmt(p.off)} · Defense ${fmt(p.def)}.</p><p class="cap htr"><b>How to read:</b> Grey dots = all 615 regulars. The coloured band = where his true impact most likely lies; darker = more likely. Right of zero = his team does better with him on the floor than with an average regular.</p></div>
+  </section>
+  <section><h2>Role</h2><p class="prose cap">Per 100 possessions on court, career. Bars show the percentile among the 615 regulars (50th = middle).</p>
+   <div class="card bars">${roleRows}</div><p class="cap htr"><b>How to read:</b> Each bar = his percentile among the 615 regulars for that stat, per 100 possessions; 50th = middle. Orange: more is usually better. Grey: less is better.</p></section>
+  <section><h2>What PIR counts vs what it is worth</h2>
+   <p class="prose">For each box-score event: how much it adds to his rating compared with an average regular, using PIR's fixed weights (grey, rescaled) and the weights learned from the data (gold). Per 100 possessions.</p>
+   <div class="card"><div class="legend"><span><i style="background:var(--box)"></i>Learned weights · total ${fmt(wfB,2)}</span><span><i style="background:var(--pir)"></i>PIR weights, rescaled · total ${fmt(wfP,2)}</span></div><div id="c-wf" class="plot"></div><p class="cap htr"><b>How to read:</b> Each bar = how much this event moves his rating compared with an average regular: (his rate − average rate) × the value of the event. A negative bar does not mean the event is bad: it means he does it less often than average (or a bad thing more often). Gold = values learned from the data, grey = PIR's values.</p></div></section>
+  <section><h2>Season by season</h2>
+   <div class="card"><div class="legend"><span><i style="background:var(--box)"></i>Learned box score per season, with 90% range</span></div><div id="c-arc" class="plot"></div>
+   <p class="cap">Box-score value per 100 possessions in each season (seasons with 200+ possessions), pulled toward average when the season is short. Points per 100 possessions vs an average player of that season.</p><p class="cap htr"><b>How to read:</b> Each dot = one season: his box-score value per 100 possessions compared with an average player that season, using the learned values. The bar is the 90% range; short seasons are pulled toward zero. Above zero = better than average.</p></div>
+   <div class="tablewrap"><table><thead><tr><th class="l">Season</th><th class="l">Team</th><th>Possessions</th><th title="PIR per 100 possessions on court">PIR / 100</th><th title="Same numbers as the chart above">Learned box / 100</th><th>Team net with him</th><th>Team net without him</th><th>On − off</th></tr></thead><tbody>${ooHtml}</tbody></table></div>
+   <p class="cap">On/off is raw: it does not adjust for teammates or opponents, so a backup who plays behind a star often looks bad. The on-court impact above does that adjustment.</p><p class="cap htr"><b>How to read:</b> PIR / 100 = his PIR per 100 possessions on court that season (regular season and playoffs; for a season split between two clubs, the season total). Learned box / 100 = the dots in the chart above (seasons with 200+ possessions). On = team's point margin per 100 possessions with him on the floor; Off = without him. Raw numbers: they ignore who else was on the floor.</p></section>
+  <section id="sh-sec" hidden><h2>Shot chart</h2><p class="prose cap">Every shot from the field (regular season and playoffs), from the league's shot data. Pick one season or a range, and how to show it: every shot, a heat map of where he shoots from, or his shooting by zone against the league. Heaves from beyond about nine metres are left off the drawing but counted in the tables. The three-point line moved from 6.25 m to 6.75 m in 2011–12.</p>
+   <div class="controls"><div class="seg" id="sh-mode" role="group" aria-label="View"><button data-v="shots" aria-pressed="true">Shots</button><button data-v="heat" aria-pressed="false">Heat</button><button data-v="zones" aria-pressed="false">Zones</button></div>
+    <label>From <select id="sh-a"></select></label><label>to <select id="sh-b"></select></label><button class="more" id="sh-all" style="margin:0">All seasons</button>
+    <div class="seg" id="sh-filt" role="group" aria-label="Shots"><button data-v="all" aria-pressed="true">All</button><button data-v="made" aria-pressed="false">Made</button><button data-v="miss" aria-pressed="false">Missed</button></div>
+    <label>Compare with <input id="sh-vs" type="search" list="plist" placeholder="Another player" style="width:170px"></label><button class="more" id="sh-vsx" style="margin:0" aria-label="Remove comparison">×</button>${shareBtn("shshare")}</div>
+   <div class="grid2" id="sh-grid"></div><p class="cap htr"><b>How to read:</b> Shots: filled dot = made, ring = missed. Heat: darker = more of his shots came from there. Zones: big number = his percentage from that zone, small = number of shots; colour compares him (orange = better than the league, blue = worse) with an average shooter from the same spot. Left and right as drawn, looking at the basket from midcourt.</p></section>
+  <section><h2>Game by game</h2><p class="prose cap">Each dot is one game. Learned box score: points added to the team margin compared with an average player given the same possessions. PIR: the official formula. The line is the average of the last 10 games. A single game says little (see "One honest limit" under Why not PIR).</p>
+   <div class="card"><div id="c-gm" class="plot"><p class="cap">Loading…</p></div><p class="cap" id="gm-cap"></p><p class="cap htr"><b>How to read:</b> Each dot = one game. Top: learned box score, points added compared with an average player given the same possessions. Bottom: PIR. The line is the average of his last 10 games. Single games are noisy; follow the line.</p></div></section>
+  ${repHtml}
+  ${simHtml}`;
+  // impact chart: all regulars as light dots, player as strip
+  const el=document.getElementById("c-imp");
+  const main=CORE.players.filter(x=>x.tier==="main");
+  const se=(p.hi-p.lo)/(2*1.645), c=p.net>=0?css("--accent"):css("--down");
+  const bands=[[1.96,.15],[1.2816,.25],[0.6745,.4]].map(([z,o])=>({x1:p.net-z*se,x2:p.net+z*se,o}));
+  el.replaceChildren(Plot.plot({width:W(el),height:165,marginTop:26,marginRight:16,marginBottom:40,style:sty(),
+    x:{domain:[-11,12],grid:true,label:W(el)<500?"pts/100 vs average →":"points per 100 possessions vs average regular →"},y:{axis:null,domain:[0,1]},
+    marks:[Plot.dotX(main,{x:"net",y:0.25,r:2,fill:css("--pir"),fillOpacity:.35}),
+      ...(p.tier==="main"?bands.map(b=>Plot.rectX([b],{x1:"x1",x2:"x2",y1:0.5,y2:0.9,fill:c,fillOpacity:b.o})):[]),
+      Plot.ruleX([p.net],{y1:0.45,y2:0.95,stroke:c,strokeWidth:3}),
+      Plot.ruleX([0],{stroke:css("--muted")}),
+      Plot.text([p],{x:"net",y:0.98,text:x=>fmt(x.net),fill:c,fontWeight:700,fontSize:14})]}));
+  const wf=CORE.weights.map((w,i)=>[{e:w.event,k:"Learned",v:d.wf[i][0]},{e:w.event,k:"PIR",v:d.wf[i][1]}]).flat();
+  const el2=document.getElementById("c-wf");
+  el2.replaceChildren(Plot.plot({width:W(el2),height:470,marginLeft:115,marginBottom:44,style:sty(),
+    x:{grid:true,label:W(el2)<560?"per 100 vs average →":"points per 100 possessions vs average regular →"},y:{domain:CORE.weights.map(w=>w.event),label:null,padding:.15},
+    marks:[Plot.barX(wf.filter(r=>r.k==="PIR"),{x:"v",y:"e",fill:css("--pir"),insetTop:14,insetBottom:2}),
+      Plot.barX(wf.filter(r=>r.k==="Learned"),{x:"v",y:"e",fill:css("--box"),insetTop:2,insetBottom:12}),
+      Plot.ruleX([0],{stroke:css("--muted")}),
+      Plot.tip(wf,Plot.pointerY({x:"v",y:"e",title:r=>`${r.e}\n${r.k}: ${fmt(r.v,2)}`}))]}));
+  const el3=document.getElementById("c-arc"), arc=(d.arc||[]).map(([s,v,sd,n])=>({s,v,lo:v-1.645*sd,hi:v+1.645*sd,n}));
+  if(arc.length) el3.replaceChildren(Plot.plot({width:W(el3),height:230,marginBottom:40,marginRight:30,style:sty(),
+    x:{label:"season →",tickFormat:x=>season(x),ticks:arc.map(a=>a.s)},y:{grid:true,label:"↑ per 100 vs average"},
+    marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.ruleX(arc,{x:"s",y1:"lo",y2:"hi",stroke:css("--box"),strokeWidth:6,strokeOpacity:.3}),
+      Plot.lineY(arc,{x:"s",y:"v",stroke:css("--box"),strokeOpacity:.5}),Plot.dot(arc,{x:"s",y:"v",fill:css("--box"),r:4}),
+      Plot.tip(arc,Plot.pointerX({x:"s",y:"v",title:a=>`${season(a.s)}\n${fmt(a.v,2)} [${fmt(a.lo,2)}, ${fmt(a.hi,2)}]\n${a.n.toLocaleString("en")} poss.`}))]}));
+  else el3.textContent="Not enough possessions in any single season.";
+  shotModule(k);
+  getJ("awards.json").then(A=>{const el=document.getElementById("pbadges"); if(el) el.innerHTML=awardSummary(A.p[k],false);});
+  getJ("games.json").then(G=>{const el4=document.getElementById("c-gm"), cap=document.getElementById("gm-cap"); if(!el4) return;
+    {const by={}; (G[k]||[]).forEach(x=>{const b=by[x[0]]=by[x[0]]||{n:0,pir:0,box:0}; b.n+=x[5]; b.pir+=x[6]; b.box+=x[7];});
+     app.querySelectorAll("td[data-pir]").forEach(td=>{const b=by[td.dataset.pir]; td.textContent=b&&b.n>0?(100*b.pir/b.n).toFixed(1):"—";});
+}
+    const g=(G[k]||[]).map((x,i)=>({i:i+1,s:x[0],r:x[1],ph:x[2],opp:x[3],home:x[4],n:x[5],pir:x[6],box:x[7]}));
+    if(g.length<5){el4.textContent="Too few games.";return;}
+    const roll=(f)=>g.map((x,i)=>{const w=g.slice(Math.max(0,i-9),i+1);return {i:x.i,v:w.reduce((a,y)=>a+y[f],0)/w.length};});
+    const r=d3.mean(g,x=>x.box), cor=(()=>{const mb=d3.mean(g,x=>x.box),mp=d3.mean(g,x=>x.pir);let a=0,b=0,c=0;g.forEach(x=>{a+=(x.box-mb)*(x.pir-mp);b+=(x.box-mb)**2;c+=(x.pir-mp)**2;});return a/Math.sqrt(b*c);})();
+    const panel=(f,lab,col)=>Plot.plot({width:W(el4),height:190,marginBottom:30,marginLeft:44,style:sty(),x:{label:null,ticks:[]},y:{grid:true,label:lab},
+      marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.dot(g,{x:"i",y:f,r:2,fill:col,fillOpacity:.35}),Plot.lineY(roll(f),{x:"i",y:"v",stroke:col,strokeWidth:2}),
+        Plot.tip(g,Plot.pointerX({x:"i",y:f,title:x=>`${season(x.s)} · round ${x.r}${x.ph!=="RS"?" ("+x.ph+")":""} · ${x.home?"vs":"at"} ${x.opp}\nLearned box score ${fmt(x.box,1)} · PIR ${x.pir} · ${x.n} poss.`}))]});
+    const wrap=document.createElement("div"); wrap.append(panel("box","↑ learned box score",css("--box")),panel("pir","↑ PIR",css("--pir")));
+    el4.replaceChildren(wrap);
+    cap.textContent=`${g.length} games, ${season(g[0].s)} to ${season(g[g.length-1].s)}. Average learned box score per game ${fmt(r,2)} points vs an average player; game-to-game correlation between the two ratings ${cor.toFixed(2)}.`;});
+}
+
+async function viewCompare(keys){
+  await needDet();
+  keys=[...new Set(keys.filter(k=>BYKEY[k]))].slice(0,10);
+  const P=keys.map(k=>BYKEY[k]), D=keys.map(k=>DET[k]||{}), T=P.map(tier), cols=CORE.prof_cols, ix=c=>cols.indexOf(c);
+  const COL=[css("--accent"),css("--box"),css("--hyb"),css("--down")];
+  const chips=P.map((p,j)=>`<span class="tag t-ct" style="font-size:13px;padding:5px 10px">${j<4?`<i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${COL[j]};margin-right:6px"></i>`:""}<a href="#p-${p.k}">${esc(p.name)}</a> <button data-rm="${p.k}" aria-label="Remove ${esc(p.name)}" style="all:unset;cursor:pointer;margin-left:6px;color:var(--muted)">×</button></span>`).join(" ");
+  const addBox=keys.length<10?`<input id="vadd" type="search" list="plist" placeholder="${keys.length?"Add a player":"Type a player"}" aria-label="Add a player" style="min-width:240px">`:`<span class="cap">Up to 10 players.</span>`;
+  let body="";
+  if(P.length){
+    const F=P.slice(0,4), FD=D.slice(0,4), FT=T.slice(0,4);
+    const head=`<tr><th class="l"></th>${F.map(p=>`<th>${esc(p.name)}</th>`).join("")}</tr>`;
+    const row=(lab,f)=>`<tr><td class="l">${lab}</td>${F.map((_,j)=>`<td>${f(j)}</td>`).join("")}</tr>`;
+    const role=PROF.map(([c,lab,good])=>row(lab+(good?"":" <span class='cap'>(lower is better)</span>"),j=>{const q=FD[j].q?FD[j].q[ix(c)]:null,v=FD[j].p?FD[j].p[ix(c)]:null;if(q==null)return "—";
+      const isPct=["ts","p3","ft","tpr"].includes(c);return `${isPct?(100*v).toFixed(1)+"%":v.toFixed(1)} <span class="cap">${ord(q)}</span>`;})).join("");
+    const tot=(j,i)=>FD[j].wf?fmt(FD[j].wf.reduce((s,x)=>s+x[i],0),2):"—";
+    body=`<section><h2>All selected players</h2><div class="tablewrap"><table><thead><tr><th class="l">Player</th><th class="l">Main team</th><th>Poss.</th><th>Impact</th><th class="l">Range</th><th class="l">Group</th><th>PIR/100</th></tr></thead><tbody>
+      ${P.slice().sort((x,y)=>y.net-x.net).map(p=>{const t=tier(p);return `<tr><td><a href="#p-${p.k}">${esc(p.name)}</a></td><td class="l">${esc(p.team)}</td><td class="mono">${p.poss.toLocaleString("en")}</td><td class="mono"><b>${fmt(p.net)}</b></td><td class="l">${strip(p)}</td><td class="l"><span class="tag ${t.c}">${t.t}</span></td><td class="mono">${p.pir100.toFixed(1)}</td></tr>`;}).join("")}
+      </tbody></table></div><p class="cap htr"><b>How to read:</b> Sorted by on-court impact. Two players only differ clearly if their range bands barely overlap. Career numbers, 2008–09 to 2025–26.</p></section>
+     <section><h2>Side by side${P.length>4?" (first four)":""}</h2><div class="tablewrap"><table><thead>${head}</thead><tbody>
+     ${row("Group",j=>`<span class="tag ${FT[j].c}">${FT[j].t}</span>`)}
+     ${row("On-court impact (per 100)",j=>`<b>${fmt(F[j].net)}</b>`)}
+     ${row("Range",j=>strip(F[j]))}
+     ${row("Offense · Defense",j=>`${fmt(F[j].off)} · ${fmt(F[j].def)}`)}
+     ${row("Chance above average",j=>F[j].pab==null?"—":`${Math.round(F[j].pab*10)} in 10`)}
+     ${row("Possessions",j=>F[j].poss.toLocaleString("en"))}
+     ${row("Main team · seasons",j=>`${esc(F[j].team)} · ${F[j].seasons}`)}
+     ${row("PIR per 100",j=>F[j].pir100.toFixed(1))}
+     ${row("Box-score value, learned weights (vs average, per 100)",j=>tot(j,0))}
+     ${row("Same, PIR weights rescaled",j=>tot(j,1))}
+     </tbody></table></div><p class="cap htr"><b>How to read:</b> Each row compares the players on the same measure. Percentiles are among the 615 regulars.</p></section>
+     <section><h2>Role</h2><div class="tablewrap"><table><thead><tr><th class="l">Per 100 possessions · percentile among 615 regulars</th>${F.map(p=>`<th>${esc(p.name)}</th>`).join("")}</tr></thead><tbody>${role}</tbody></table></div></section>
+     <section><h2>Learned box score by season</h2><div class="card"><div class="legend">${F.map((p,j)=>`<span><i style="background:${COL[j]}"></i>${esc(p.name)}</span>`).join("")}</div><div id="c-vs" class="plot"></div><p class="cap htr"><b>How to read:</b> Each dot = one season of learned box score per 100 possessions compared with average; bars = 90% range.</p></div></section>`;
+  } else body=`<section><p class="prose">Pick up to ten players. The first four appear side by side in detail; all of them appear in one list.</p></section>`;
+  app.innerHTML=`<section><div class="kicker">Side by side</div><h2>Compare players</h2>
+   <div class="controls">${chips}${addBox}</div></section>${body}`;
+  const go=ks=>{location.hash="vs-"+ks.join("-");};
+  const ad=document.getElementById("vadd");
+  if(ad) ad.addEventListener("change",()=>{const v=deacc(ad.value.trim());const p=CORE.players.find(x=>deacc(x.name)===v);if(p&&!keys.includes(p.k)) go([...keys,p.k]);});
+  app.querySelectorAll("button[data-rm]").forEach(b=>b.addEventListener("click",()=>go(keys.filter(k=>k!==b.dataset.rm))));
+  const el=document.getElementById("c-vs");
+  if(el){const pts=keys.slice(0,4).flatMap((k,j)=>((DET[k]||{}).arc||[]).map(([s,v,sd,n])=>({s,v,lo:v-1.645*sd,hi:v+1.645*sd,who:BYKEY[k].name,j})));
+    const col=j=>COL[j];
+    el.replaceChildren(pts.length?Plot.plot({width:W(el),height:260,marginBottom:40,marginRight:28,style:sty(),x:{label:"season →",tickFormat:x=>season(x)},y:{grid:true,label:"↑ per 100 vs average"},
+      marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.ruleX(pts,{x:"s",y1:"lo",y2:"hi",stroke:d=>col(d.j),strokeWidth:5,strokeOpacity:.25}),
+        Plot.lineY(pts,{x:"s",y:"v",z:"j",stroke:d=>col(d.j),strokeOpacity:.6}),Plot.dot(pts,{x:"s",y:"v",fill:d=>col(d.j),r:4}),
+        Plot.tip(pts,Plot.pointerX({x:"s",y:"v",title:d=>`${d.who}\n${season(d.s)}: ${fmt(d.v,2)}`}))]}):document.createTextNode("No season with 200+ possessions."));}
+}
+
+function viewTried(){
+  const R=[
+   ["Removing free-throw luck","Made free throws replaced by the shooter's expected percentage","Prediction error per possession: 0.109% better than a no-player baseline, against 0.105% without it (difference +0.004 percentage points [0.001, 0.007]); within-team slope +0.063 [0.010, 0.116]","Adopted: the on-court impact uses it"],
+   ["Learned box-score weights","Same events as PIR, weights learned from on-court impact (earlier seasons only)","Within-team slope 1.87 vs PIR 0.88; difference +0.99 [0.39, 1.62]","Adopted as the learned box score"],
+   ["Box score as the starting point of the rating","On-court impact that starts from the learned box score instead of from average","+0.24 [0.10, 0.40] over on-court impact, but on seasons that were also used for other choices","Not decided: a test written in advance will decide on NBA data"],
+   ["Mixing box score and on-court impact","A weighted average, weight chosen on 2018–2021, checked on 2022–2025","Mix minus box score +0.08 [−0.11, 0.27]","Not adopted"],
+   ["Adding EuroCup games","Training on EuroLeague and EuroCup possessions together","Players with no history fell from 18.7% to 10.4% of test possessions, but game prediction did not improve: −0.002 [−0.023, +0.017]","Not adopted"],
+   ["Less weight to old seasons","Older seasons count less (several decay rates)","Best rate: 0.110% vs 0.105% better than the baseline, inside the noise","Not adopted"],
+   ["More weight to clutch, less to garbage time","Weights 1–3 for close late possessions, 0–1 for blowouts","No setting improved prediction (−0.006 to −0.001 percentage points)","Not adopted"],
+   ["A starting point that depends on playing time","The value a player starts from before his data moves him depends on how much he has played","No improvement","Not adopted"],
+   ["Is clutch a skill?","Does a player's clutch edge repeat the next season?","Correlation +0.01 [−0.07, 0.08]","No sign it repeats (see Clutch?)"]];
+  app.innerHTML=`<section><div class="kicker">Including what did not work</div><h2>What we tried</h2>
+   <p class="prose">Every idea below was tested with a rule written down before the run. Most did not help, and that is reported here too. Intervals are 95%. The 2018–2025 seasons were used for many of these choices, which is why the decisive tests are the locked 2026–27 forecast and, later, the NBA.</p>
+   <div class="tablewrap"><table><thead><tr><th class="l">Idea</th><th class="l">What changed</th><th class="l">Result</th><th class="l">Verdict</th></tr></thead><tbody>
+   ${R.map(r=>`<tr><td class="l"><b>${r[0]}</b></td><td class="l" style="white-space:normal">${r[1]}</td><td class="l" style="white-space:normal">${r[2]}</td><td class="l" style="white-space:normal">${r[3]}</td></tr>`).join("")}
+   </tbody></table></div><p class="cap htr"><b>How to read:</b> Each row = one idea. The verdict follows a rule written down before the test.</p></section>`;
+}
+
+const FFN=[["eFG%","Effective shooting: made shots with threes counted 1.5, per shot attempt",1],["TOV%","Turnovers per 100 plays (shots + 0.44 × free throws + turnovers)",0],["ORB%","Share of own missed shots rebounded by the team",1],["FT rate","Free-throw attempts per shot attempt",1]];
+const pct=v=>v==null?"—":(100*v).toFixed(1);
+function rankOf(arr,v,higher){return 1+arr.filter(x=>higher?x>v:x<v).length;}
+async function viewTeams(){
+  const E=await getJ("extra.json");
+  const seasons=[...new Set(TEAMS.map(t=>t.s))].sort((a,b)=>b-a);
+  app.innerHTML=`<section><div class="kicker">Team seasons · 2008–09 to 2025–26</div><h2>Teams</h2>
+   <p class="prose">Wins against expected wins. Expected wins come from points scored and allowed (a "Pythagorean" formula fitted on 2008–2017). A team far above its expected wins won many close games; that rarely carries over to the next season.</p>
+   <div class="controls"><label>Season <select id="ss">${seasons.map(s=>`<option value="${s}">${season(s)}</option>`).join("")}</select></label></div>
+   <div class="card"><div class="legend"><span><i style="background:var(--pir)"></i>Expected wins</span><span><i style="background:var(--accent)"></i>Actual wins</span></div><div id="c-tw" class="plot"></div><p class="cap htr"><b>How to read:</b> Grey bar = wins expected from points scored and allowed. Orange bar = actual wins. The gap is the part of the record that points scored and allowed do not explain; for most teams it does not carry over to the next season.</p></div>
+   <div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>W–L</th><th>Expected W</th><th>Wins above expected</th><th>Net / 100</th><th>Pts for</th><th>Pts against</th><th title="Possessions per team per game">Pace</th>${FFN.map(f=>`<th title="${f[1]} (offense)">${f[0]}</th>`).join("")}</tr></thead><tbody id="ttb"></tbody></table></div><p class="cap htr"><b>How to read:</b> Wins above expected = actual minus expected wins (the part the points do not explain; often close games). Net / 100 = points scored minus allowed per 100 possessions.</p><p class="cap htr"><b>How to read:</b> Pace = possessions per team per game (overtime included). eFG%, TOV%, ORB% and FT rate are the team's own offense (the "Four Factors"; see the Glossary). Lower TOV% is better.</p>
+   <div class="card" style="margin-top:14px"><h3>Pace and results</h3><div id="c-pn" class="plot"></div><p class="cap htr"><b>How to read:</b> Each dot = one team this season. Horizontal: possessions per game. Vertical: points scored minus allowed per 100 possessions. A flat cloud means playing fast or slow did not go with winning or losing.</p></div></section>`;
+  const sel=document.getElementById("ss");
+  function render(){
+    const s=+sel.value, rows=TEAMS.filter(t=>t.s===s).sort((a,b)=>b.w-a.w||b.xw-a.xw);
+    document.getElementById("ttb").innerHTML=rows.map(t=>`<tr><td><a href="#t-${t.s}-${t.t}">${esc(t.name)}</a></td><td class="mono">${t.w}–${t.gp-t.w}</td><td class="mono" title="${t.xw.toFixed(1)}">${Math.round(t.xw)}</td><td class="mono">${fmt(t.w-Math.round(t.xw),0)}</td><td class="mono">${fmt(t.net)}</td><td class="mono">${t.pf}</td><td class="mono">${t.pa}</td>${(x=>`<td class="mono">${x?x.pace.toFixed(1):"—"}</td>`+FFN.map((f,i)=>`<td class="mono">${x?pct(x.off[i]):"—"}</td>`).join(""))(E.team[`${t.s}_${t.t}`])}</tr>`).join("");
+    paceNet(document.getElementById("c-pn"),rows.map(t=>({...t,pace:(E.team[`${t.s}_${t.t}`]||{}).pace})).filter(t=>t.pace));
+    const el=document.getElementById("c-tw");
+    winsChart(el,rows);
+  }
+  sel.addEventListener("input",render); render();
+}
+
+function viewTeam(s,code){
+  const t=TEAMS.find(x=>x.s===s&&x.t===code);
+  if(!t){app.innerHTML=`<section><p>Team season not found. <a href="#teams">All teams</a></p></section>`;return;}
+  const hist=TEAMS.filter(x=>x.t===code).sort((a,b)=>a.s-b.s);
+  const rost=t.roster.map(([k,sh])=>({p:BYKEY[k],sh})).filter(r=>r.p);
+  app.innerHTML=`<section><a class="back" href="#teams">← All teams</a>
+   <div class="kicker" style="margin-top:10px">${season(s)} · regular season</div>
+   <h1 style="font-size:clamp(38px,6vw,64px)">${esc(t.name)}</h1>
+   <div class="grid3"><div class="card stat"><b>${t.w}–${t.gp-t.w}</b><span>record</span></div>
+    <div class="card stat"><b title="${t.xw.toFixed(1)}">${Math.round(t.xw)}</b><span>expected wins from points scored and allowed (${fmt(t.w-Math.round(t.xw),0)} wins above expected)</span></div>
+    <div class="card stat"><b>${fmt(t.net)}</b><span>net points per 100 possessions</span></div></div></section>
+  <section><h2>Four Factors and pace</h2><div id="ffb"><p class="cap">Loading…</p></div></section>
+  <section><h2>Who played</h2><p class="prose cap">Share of the team's possessions this season, with each player's career on-court impact (all seasons, not just this one).</p>
+   <div class="tablewrap"><table><thead><tr><th class="l">Player</th><th>Share of possessions</th><th>Career impact</th><th class="l">Range</th><th class="l">Group</th></tr></thead><tbody>
+   ${rost.map(({p,sh})=>{const tt=tier(p);return `<tr><td><a href="#p-${p.k}">${esc(p.name)}</a></td><td class="mono">${(100*sh).toFixed(0)}%</td><td class="mono">${fmt(p.net)}</td><td class="l">${strip(p)}</td><td class="l"><span class="tag ${tt.c}">${tt.t}</span></td></tr>`;}).join("")}
+   </tbody></table></div><p class="cap htr"><b>How to read:</b> Share = share of the team's possessions he was on the floor. Impact and range = his rating over all seasons, not only this one.</p></section>
+  <section><h2>Who plays when</h2><p class="prose cap">Share of games in which each player was on the floor at some point in that minute (regular season). Darker = more often.</p><div class="card"><div id="c-rot" class="plot"><p class="cap">Loading…</p></div><p class="cap htr"><b>How to read:</b> Rows = players, columns = minutes 1–40. Darker = he was on the floor in that minute in more of the team's games.</p></div></section>
+  <section><h2>Lineups</h2><p class="prose cap">Five-man units with 100+ possessions. "Expected" adds up the five players' career on-court impact; "Best estimate" pulls the raw result toward that expectation, more strongly for units that played little.</p><div class="tablewrap"><table><thead><tr><th class="l">Lineup</th><th>Possessions</th><th>Raw net</th><th>Expected</th><th>Best estimate</th><th title="Sum of the five players' on-court impact using earlier seasons only">Predicted before the season</th></tr></thead><tbody id="lub"><tr><td class="l">Loading…</td></tr></tbody></table></div><p class="cap htr"><b>How to read:</b> Raw net = points scored minus allowed per 100 possessions with these five on the floor. Expected = the sum of their five career impacts. Best estimate = the raw result pulled toward the expected one; lineups with few possessions are pulled more. Predicted before the season = the same sum, but using only seasons before this one (available from 2018–19; * = some players had no earlier data). See "How the EuroLeague changed" for how much a lineup's raw net can be trusted.</p></section>
+  <section><h2>Through the years</h2><div class="card"><div id="c-th" class="plot"></div><p class="cap">Net points per 100 possessions in each season the club played (regular season).</p><p class="cap htr"><b>How to read:</b> Each dot = net per 100 possessions in one season; the larger dot is the season shown.</p></div></section>`;
+  const el=document.getElementById("c-th");
+  el.replaceChildren(Plot.plot({width:W(el),height:240,marginBottom:40,marginRight:28,style:sty(),
+    x:{label:"season →",tickFormat:d=>season(d),ticks:hist.map(h=>h.s).filter((_,i,a)=>a.length<10||i%2===0)},y:{grid:true,label:"↑ net / 100"},
+    marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.lineY(hist,{x:"s",y:"net",stroke:css("--accent"),strokeWidth:2}),
+      Plot.dot(hist,{x:"s",y:"net",fill:h=>h.s===s?css("--box"):css("--accent"),r:h=>h.s===s?6:3.5}),
+      Plot.tip(hist,Plot.pointerX({x:"s",y:"net",title:h=>`${season(h.s)}\n${h.w}–${h.gp-h.w} · net ${fmt(h.net)}`}))]}));
+  getJ(`rotation_${s}.json`).then(R=>{const r=R[`${s}_${code}`], el2=document.getElementById("c-rot"); if(!el2) return;
+    if(!r){el2.textContent="No rotation data.";return;}
+    const nm=k=>(BYKEY[k]?BYKEY[k].name:k), cells=[]; r.p.forEach(([k,a])=>a.forEach((v,i)=>cells.push({p:nm(k),m:i+1,v})));
+    el2.replaceChildren(Plot.plot({width:W(el2),height:r.p.length*26+60,marginLeft:150,marginBottom:40,style:sty(),
+      x:{label:"minute →",ticks:[1,5,10,15,20,25,30,35,40]},y:{domain:r.p.map(([k])=>nm(k)),label:null},
+      color:{type:"linear",domain:[0,100],range:[css("--soft"),css("--accent")]},
+      marks:[Plot.cell(cells,{x:"m",y:"p",fill:"v",inset:0.5}),Plot.ruleX([10.5,20.5,30.5],{stroke:css("--surface"),strokeWidth:2}),
+        Plot.tip(cells,Plot.pointer({x:"m",y:"p",title:c=>`${c.p}\nminute ${c.m}: on court in ${c.v}% of games`}))]}));});
+  getJ("extra.json").then(E=>{const x=E.team[`${s}_${code}`], el=document.getElementById("ffb"); if(!el) return;
+    if(!x){el.textContent="No data.";return;}
+    const peers=Object.entries(E.team).filter(([k])=>k.startsWith(s+"_")).map(([,v])=>v), lg=(E.league[s]||{}).rs, n=peers.length;
+    const row=(f,i,side)=>{const v=x[side][i], good=side==="off"?f[2]===1:f[2]!==1;
+      return `<td class="mono">${pct(v)}</td><td class="mono">${pct(side==="off"?lg.ff[i]:lg.ff[i])}</td><td class="mono">${rankOf(peers.map(p=>p[side][i]),v,good)} of ${n}</td>`;};
+    el.innerHTML=`<div class="tablewrap"><table><thead><tr><th class="l"></th><th>Offense</th><th>League avg.</th><th>Rank</th><th>Defense (opponents)</th><th>League avg.</th><th>Rank</th></tr></thead><tbody>
+     ${FFN.map((f,i)=>`<tr><td class="l" title="${f[1]}">${f[0]}</td>${row(f,i,"off")}${row(f,i,"def")}</tr>`).join("")}
+     <tr><td class="l">Pace</td><td class="mono">${x.pace.toFixed(1)}</td><td class="mono">${lg.pace.toFixed(1)}</td><td class="mono">${rankOf(peers.map(p=>p.pace),x.pace,true)} of ${n} <span class="cap">(1 = fastest)</span></td><td colspan="3"></td></tr></tbody></table></div>`+'<p class="cap htr"><b>How to read:</b> Four Factors: the four things that decide most of a possession\'s outcome. Offense = this team; Defense = what its opponents did against it. Rank 1 = best in the league that season (for turnovers, and for everything on defense, lower is better). Pace = possessions per team per game, overtime included.</p>';});
+  getJ("lineups.json").then(L=>{const rows=L[`${s}_${code}`]||[], tb=document.getElementById("lub"); if(!tb) return;
+   getJ("extra.json").then(E=>{const P=E.lu_pre[`${s}_${code}`]||{};
+    const sur=k=>(BYKEY[k]?BYKEY[k].name.split(" ").slice(-1)[0]:k);
+    tb.innerHTML=rows.length?rows.map(([ks,n,o,e,sh])=>`<tr><td class="l">${ks.map(k=>`<a href="#p-${k}">${esc(sur(k))}</a>`).join(", ")}</td><td class="mono">${n}</td><td class="mono">${fmt(o)}</td><td class="mono">${fmt(e)}</td><td class="mono"><b>${fmt(sh)}</b></td><td class="mono">${(p=>p?fmt(p[0])+(p[1]<5?`<span class="cap" title="${5-p[1]} of the five had no earlier EuroLeague data and count as average"> *</span>`:""):"—")(P[ks.slice().sort().join("|")])}</td></tr>`).join(""):`<tr><td class="l">No lineup with 100+ possessions.</td></tr>`;});});
+}
+
+async function viewLeague(){
+  const L=await getJ("league.json");
+  app.innerHTML=`<section><div class="kicker">2008–09 to 2025–26 · regular season</div><h2>How the EuroLeague changed</h2>
+   <p class="prose">League-wide numbers per season, from every possession. 2019–20 was cut short; most 2020–21 games were played without fans.</p>
+   <div class="grid2" id="lg"></div><p class="cap htr"><b>How to read:</b> Each dot = the league-wide value in one regular season.</p></section>
+   <section><h2>How much is home court worth?</h2><div class="card"><div id="c-home" class="plot"></div><p class="cap">Average home-team margin per game, with 95% bootstrap interval. The 2020–21 season, played mostly in empty arenas, is highlighted.</p><p class="cap htr"><b>How to read:</b> Each dot = average home-team margin per game; bar = 95% range.</p></div></section>
+   <section><h2>Regular season and playoffs</h2><div class="card"><div class="legend"><span><i style="background:var(--accent)"></i>Regular season</span><span><i style="background:var(--box)"></i>Playoffs, play-in and Final Four</span></div><div id="c-po" class="plot"></div><p class="cap htr"><b>How to read:</b> Each dot = league-wide possessions per team per game in one season (overtime included). Playoff games are few (about 20 a season), so their line is noisier.</p></div></section>
+   <section><h2>Can a lineup's raw result be trusted?</h2><div class="grid2"><div class="card"><div id="c-lu" class="plot"></div><p class="cap htr"><b>How to read:</b> Each dot = one five-man unit (2018–19 to 2025–26) with at least 25 possessions on offense and 25 on defense in each half of the regular season. Horizontal: its net per 100 in the first half. Vertical: the same in the second half. If raw lineup numbers were reliable, the dots would follow a rising line.</p></div>
+    <div class="card" id="lu-st"></div></div></section>`;
+  const panels=[["pace","Possessions per team per game"],["ortg","Points per 100 possessions"],["tpr","Share of shots from three (%)"],["p3","3-point %"],["ftr","Free throw attempts per 100 shots"],["p2","2-point %"]];
+  const box=document.getElementById("lg");
+  panels.forEach(([k,lab])=>{const c=document.createElement("div");c.className="card";c.innerHTML=`<h3>${lab}</h3><div class="plot"></div>`;box.appendChild(c);
+    const el=c.querySelector(".plot");
+    el.replaceChildren(Plot.plot({width:W(el),height:190,marginBottom:30,marginRight:28,style:sty(),x:{tickFormat:x=>season(x),ticks:[2008,2012,2016,2020,2024],label:null},y:{grid:true,label:null,zero:false},
+      marks:[Plot.lineY(L,{x:"s",y:k,stroke:css("--accent"),strokeWidth:2}),Plot.dot(L,{x:"s",y:k,fill:css("--accent"),r:3}),
+        Plot.tip(L,Plot.pointerX({x:"s",y:k,title:d=>`${season(d.s)}: ${d[k]}`}))]}));});
+  const el=document.getElementById("c-home");
+  el.replaceChildren(Plot.plot({width:W(el),height:260,marginBottom:40,marginRight:28,style:sty(),x:{tickFormat:x=>season(x),ticks:L.map(d=>d.s).filter((_,i)=>i%2===0),label:null},y:{grid:true,label:"↑ points per game for the home team"},
+    marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.ruleX(L,{x:"s",y1:"home_lo",y2:"home_hi",stroke:d=>d.s===2020?css("--box"):css("--accent"),strokeWidth:6,strokeOpacity:.35}),
+      Plot.dot(L,{x:"s",y:"home",fill:d=>d.s===2020?css("--box"):css("--accent"),r:5}),
+      Plot.tip(L,Plot.pointerX({x:"s",y:"home",title:d=>`${season(d.s)}: ${fmt(d.home,2)} [${fmt(d.home_lo,2)}, ${fmt(d.home_hi,2)}] · ${d.games} games`}))]}));
+  const E=await getJ("extra.json"), Y=Object.keys(E.league).map(Number).sort((a,b)=>a-b);
+  const pp=Y.flatMap(y=>["rs","po"].filter(k=>E.league[y][k]).map(k=>({s:y,k,v:E.league[y][k].pace,g:E.league[y][k].g})));
+  const ep=document.getElementById("c-po"), colr=k=>k==="rs"?css("--accent"):css("--box");
+  ep.replaceChildren(Plot.plot({width:W(ep),height:260,marginBottom:40,marginRight:28,style:sty(),x:{tickFormat:x=>season(x),ticks:Y.filter((_,i)=>i%2===0),label:null},y:{grid:true,label:"↑ possessions per team per game",zero:false},
+    marks:[Plot.lineY(pp,{x:"s",y:"v",z:"k",stroke:d=>colr(d.k),strokeWidth:2}),Plot.dot(pp,{x:"s",y:"v",fill:d=>colr(d.k),r:3.5}),
+      Plot.tip(pp,Plot.pointer({x:"s",y:"v",title:d=>`${season(d.s)} ${d.k==="rs"?"regular season":"playoffs"}: ${d.v.toFixed(1)} · ${d.g} games`}))]}));
+  const T=E.lu_test, el3=document.getElementById("c-lu"), pts=T.pts.map(([a,b,c,n])=>({a,b,c,n}));
+  el3.replaceChildren(Plot.plot({width:W(el3),height:300,marginBottom:42,style:sty(),x:{label:"first half, net / 100 →",grid:true},y:{label:"↑ second half",grid:true},
+    marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.ruleX([0],{stroke:css("--muted")}),Plot.dot(pts,{x:"a",y:"b",r:2.8,fill:css("--accent"),fillOpacity:.5}),
+      Plot.linearRegressionY(pts,{x:"a",y:"b",stroke:css("--box"),ci:0})]}));
+  document.getElementById("lu-st").innerHTML=`<div class="stat"><b>${fmt(T.r_half,2)}</b><span>correlation between a lineup's first-half and second-half net (${T.n} lineups). 95% interval [${T.r_half_ci[0].toFixed(2)}, ${T.r_half_ci[1].toFixed(2)}].</span></div>
+    <div class="stat" style="margin-top:14px"><b>${fmt(T.r_pre,2)}</b><span>correlation between the second-half net and the sum of the five players' on-court impact from earlier seasons only [${T.r_pre_ci[0].toFixed(2)}, ${T.r_pre_ci[1].toFixed(2)}].</span></div>
+    <p class="prose cap" style="margin-top:14px">Neither predicts a lineup's second half well: a few hundred possessions are too few, because one possession is worth 0, 1, 2 or 3 points almost at random. The two are not clearly different (difference ${fmt(T.r_pre-T.r_half,2)}, interval [${T.diff_ci[0].toFixed(2)}, ${T.diff_ci[1].toFixed(2)}]). This is why the team pages show a "best estimate" that pulls raw lineup numbers toward what the players' ratings expect.</p>`;
+}
+
+async function viewClutch(){
+  const C=await getJ("clutch.json"), c1=C.C1, c2=C.C2;
+  app.innerHTML=`<section><div class="kicker">A test, written down before it was run</div><h2>Is “clutch” a skill?</h2>
+   <p class="prose">Clutch here means the last three minutes of the fourth quarter or overtime with the score within five points: about 3.6% of all possessions. If some players reliably raise (or lower) their game in those moments, a player who did better in the clutch than in the rest of the game this season should do so again next season.</p>
+   <div class="grid2">
+    <div class="card"><h3>Players: does it carry over?</h3><div id="c-c1" class="plot"></div><p class="cap">Each dot is one player in two consecutive seasons (${c1.pairs} pairs, ${c1.players} players with 60+ clutch possessions in both). Axes: on-court net in the clutch minus the rest of the game, points per 100 possessions.</p><p class="cap htr"><b>How to read:</b> Each dot = one player in two consecutive seasons. Horizontal: how much better (or worse) his team did with him in close late minutes than in other minutes this season. Vertical: the same, next season. If clutch were a skill, the dots would follow a rising line.</p></div>
+    <div class="card"><h3>Teams: close games, first half vs second half</h3><div id="c-c2" class="plot"></div><p class="cap">Win share in games decided by 5 points or fewer, first vs second half of the same season (${c2.n} team-seasons).</p><p class="cap htr"><b>How to read:</b> Each dot = one or more team-seasons: share of close games won in the first half (horizontal) and second half (vertical) of the season. Larger dot = more team-seasons at that spot. The shares look "round" (1/2, 1/3, 3/4…) because each half has only a handful of close games.</p></div></div>
+   <div class="grid2">
+    <div class="card stat"><b>${fmt(c1.r,2)}</b><span>year-to-year correlation of players' clutch edge. 95% interval [${c1.ci[0].toFixed(2)}, ${c1.ci[1].toFixed(2)}]. For comparison, their non-clutch impact repeats at ${c1.ref_r.toFixed(2)}.</span></div>
+    <div class="card stat"><b>${fmt(c2.r,2)}</b><span>correlation of teams' close-game record between the two halves of a season [${c2.ci[0].toFixed(2)}, ${c2.ci[1].toFixed(2)}]. Their overall point margin repeats at ${c2.ref_r.toFixed(2)}.</span></div></div>
+   <p class="prose"><b>Verdict:</b> no sign that clutch performance is a repeatable skill, for players or teams. The test is not very sensitive, though: a player has only about 95 clutch possessions in a season, so a correlation of at most ${c1.ci[1].toFixed(2)} rules out only a large clutch skill (players differing by more than about 7 points per 100 clutch possessions). A smaller clutch skill would go unnoticed.</p></section>`;
+  const sc=(el,pts,lab,dom)=>el.replaceChildren(Plot.plot({width:W(el),height:300,marginBottom:42,style:sty(),x:{domain:dom,label:lab[0],grid:true},y:{domain:dom,label:lab[1],grid:true},
+    marks:[Plot.dot(pts,{x:"0",y:"1",r:2.5,fill:css("--accent"),fillOpacity:.45}),Plot.linearRegressionY(pts,{x:"0",y:"1",stroke:css("--box"),ci:0})]}));
+  sc(document.getElementById("c-c1"),c1.pts,["this season →","↑ next season"],[-80,80]);
+  {const el2=document.getElementById("c-c2"), G={}; c2.pts.forEach(([a,b])=>{const k=a.toFixed(3)+"|"+b.toFixed(3); G[k]=G[k]||{x:a,y:b,n:0}; G[k].n++;}); const pts2=Object.values(G);
+   el2.replaceChildren(Plot.plot({width:W(el2),height:300,marginBottom:42,style:sty(),x:{domain:[0,1],label:"first half →",grid:true},y:{domain:[0,1],label:"↑ second half",grid:true},r:{range:[3,13]},
+    marks:[Plot.dot(pts2,{x:"x",y:"y",r:"n",fill:css("--accent"),fillOpacity:.5}),Plot.linearRegressionY(c2.pts,{x:"0",y:"1",stroke:css("--box"),ci:0}),
+      Plot.tip(pts2,Plot.pointer({x:"x",y:"y",title:d=>`first half ${(100*d.x).toFixed(0)}% · second half ${(100*d.y).toFixed(0)}%\n${d.n} team-season${d.n>1?"s":""}`}))]}));}
+}
+
+async function viewSeason(){
+  const Sx=await getJ("season2026.json"), rows=Sx.teams.map(t=>({...t,name:fixName(t.name)})).sort((a,b)=>b.w-a.w||b.mpg-a.mpg);
+  app.innerHTML=`<section><div class="kicker">Data through round ${Sx.round} (${esc(Sx.last_date)}) · ${Sx.games} games</div><h2>Season 2026–27</h2>
+   <p class="prose">Standings with expected wins from the points margin. A forecast for the rest of the regular season was locked before round ${(Sx.r0||13)+1} and will be scored once, after round 38. The chances for the final standings further down use the same frozen player ratings, but they are a separate weekly estimate and play no part in that test.</p>
+   <div class="card"><div class="legend"><span><i style="background:var(--pir)"></i>Expected wins</span><span><i style="background:var(--accent)"></i>Actual wins</span></div><div id="c-s26" class="plot"></div><p class="cap htr"><b>How to read:</b> Same reading as the Teams chart: grey bar = wins expected from points scored and allowed, orange bar = actual wins.</p></div>
+   <div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>W–L</th><th>Expected W</th><th>Wins above expected</th><th>Margin / game</th></tr></thead><tbody>
+   ${rows.map(t=>`<tr><td><a href="#t26-${t.t}">${esc(t.name)}</a></td><td class="mono">${t.w}–${t.gp-t.w}</td><td class="mono" title="${t.xw.toFixed(1)}">${Math.round(t.xw)}</td><td class="mono">${fmt(t.w-Math.round(t.xw),0)}</td><td class="mono">${fmt(t.mpg)}</td></tr>`).join("")}</tbody></table></div><p class="cap htr"><b>How to read:</b> Wins above expected = actual minus expected wins (the part the points do not explain; often close games). Margin / game = average points scored minus allowed.</p></section>
+  <section id="odds"><p class="cap">Loading chances…</p></section>
+  <section><h2>The locked test</h2><div class="prose">
+   <p>Before round ${(Sx.r0||13)+1}, every player rating was frozen using only 2008–09 to 2025–26, and the rules for judging them were written down. After the last regular-season round (deadline 31 May 2027) each rating will be scored once, on every regular-season game from round ${(Sx.r0||13)+1} on, apart from games with faulty data under rules also fixed in advance. No setting can change in between.</p>
+   <p><b>Main question.</b> For each game: knowing who played and for how long, which rating best predicts the final point margin? Ratings compared: on-court impact, the estimated impact that starts from the box score, the learned box score and PIR. The score is the average squared error in points; intervals resample whole teams.</p>
+   <p><b>Order of the comparisons</b>, each one only if the previous one passed: (1) on-court impact beats PIR; (2) the box-score start beats plain on-court impact; (3) the learned box score beats PIR. Each comparison can end as "better", "worse" or "undecided". Even before the season it was clear that (1) might well end undecided: the test is not very sensitive. In a dry run on 2025–26, a difference between on-court impact and PIR had to exceed about 13 squared points of average error (one-sided 95%) to count.</p>
+   <p><b>Two side questions</b>, also locked: does a player's free-throw percentage help predict his three-point percentage? Is there momentum from one possession to the next?</p></div>
+   <details><summary>Fingerprints of the locked files (SHA-256)</summary><ul class="mono" style="font-size:12.5px;word-break:break-all">
+    <li>Locked folder: 2224e4695a1440bcc7a262bd825ed103d8d154a77aab8cd6299848ae14a90359</li>
+    <li>Clarifications, 22 Nov: a34ec56eb28f7e2d68ac2191f5ad1faacc64b3d945b6456e729c2b66e106b833</li>
+    <li>Clarifications, 22 Nov (second review): 776788b20397c73c28dd252b9a7d1b9112d1f0d6777be5edfa69cb8a86f25f5f</li></ul></details>
+   <div id="lock13"></div>
+  </section>`;
+  const el=document.getElementById("c-s26");
+  winsChart(el,rows);
+  oddsSection(document.getElementById("odds"),rows);
+}
+const pc=v=>v<0.005?"<1%":v>0.995?">99%":Math.round(100*v)+"%";
+async function oddsSection(box,rows){
+  let EB=null; try{EB=await getJ("elo_back.json");}catch(e){}
+  const B=await getJ("odds.json"), L=B.live, N=L.n, nm=Object.fromEntries(rows.map(t=>[t.t,t.name]));
+  const Hs=B.hist||[], prev=Hs.length>1?Hs[Hs.length-2]:null, prevP=prev?Object.fromEntries(Object.entries(prev.p).map(([t,v])=>[t,v[0]])):null;
+  const T=L.teams.map(x=>{const p=x.p.map(v=>v/N), s6=p.slice(0,6).reduce((a,b)=>a+b,0), s10=p.slice(0,10).reduce((a,b)=>a+b,0);
+    return {...x,name:nm[x.t]||x.t,p,top6:s6,pin:s10-s6,out:1-s10,first:p[0],ep:p.reduce((a,v,i)=>a+v*(i+1),0),d6:prevP&&prevP[x.t]!=null?s6-prevP[x.t]:null};}).sort((a,b)=>a.ep-b.ep);
+  box.innerHTML=`<div class="kicker">After round ${L.rmax} (${new Date(L.asof+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}) · updated weekly · ${N.toLocaleString("en")} simulated seasons</div><h2>Chances for the final standings</h2>
+   <p class="prose">The rest of the regular season is played out ${N.toLocaleString("en")} times. Each game's expected margin comes from the players each team has been using this season (their share of minutes so far) and those players' on-court impact frozen before the season, plus home court. Results already played are kept as they are. Top 6 go straight to the playoffs, 7–10 to the play-in. Ties are broken by head-to-head wins, then head-to-head margin, then overall margin.</p>
+   <div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>W–L</th><th>Top 6</th><th>7–10 (play-in)</th><th>11th or lower</th><th>1st</th><th>Average finish</th><th title="Change in the top-6 chance since the previous weekly update">Change since last week</th></tr></thead><tbody>
+   ${T.map(t=>`<tr><td><a href="#t26-${t.t}">${esc(t.name)}</a></td><td class="mono">${t.w}–${t.g-t.w}</td><td class="mono"><b>${pc(t.top6)}</b></td><td class="mono">${pc(t.pin)}</td><td class="mono">${pc(t.out)}</td><td class="mono">${pc(t.first)}</td><td class="mono">${t.ep.toFixed(1)}</td><td class="mono">${t.d6==null?"—":Math.round(100*t.d6)===0?"=":`<span style="color:${t.d6>0?"var(--up,#1f9d55)":"var(--down)"}">${t.d6>0?"▲":"▼"} ${Math.abs(Math.round(100*t.d6))}</span>`}</td></tr>`).join("")}</tbody></table></div><p class="cap htr"><b>How to read:</b> Each row = one team, sorted by average finishing position. Percentages = share of simulated seasons in which that happened. The last column shows how the top-6 chance moved since the previous weekly update, in percentage points (it fills in from the second update).</p>
+   <div class="card" style="margin-top:14px"><h3>Every finishing position</h3><div id="c-hm" class="plot"></div><p class="cap htr"><b>How to read:</b> Rows = teams, columns = final position 1–20. Darker = more likely. A short dark band = the outcome is fairly settled; a long pale band = still wide open.</p></div>
+   <div class="card" style="margin-top:14px"><h3>How the top-6 chances moved</h3><div id="c-hi" class="plot"></div></div>
+   <p class="prose cap" style="margin-top:14px"><b>Limits.</b> Injuries and signings count only once a player has actually played or stopped playing; nothing is known about the future. Player ratings are frozen and are not updated with this season's games. Game-to-game spread (±${B.sig.toFixed(1)} points) and the uncertainty in each team's strength (±${B.tau.toFixed(1)}) were measured on 2018–19 to 2025–26.</p>
+
+   <h2 style="margin-top:28px">Has this worked before?</h2>
+   <p class="prose">The same method, run after round 13 of six earlier seasons with player ratings from earlier seasons only, then compared with how the season ended (2019–20 was cut short; in 2021–22 the Russian clubs' games were removed). ${B.brier.n} team-seasons.</p>
+   <div class="grid2"><div class="card"><h3>Did 70% mean 7 in 10?</h3><div class="tablewrap"><table><thead><tr><th class="l">Chance given</th><th>Teams</th><th>Average chance</th><th>Made it</th></tr></thead><tbody>
+     ${B.brier.cal.map((r,i)=>`<tr><td class="l">${["0–10%","10–30%","30–50%","50–70%","70–90%","90–100%"][i]}</td><td class="mono">${r[0]}</td><td class="mono">${Math.round(100*r[1])}%</td><td class="mono">${Math.round(100*r[2])}%</td></tr>`).join("")}</tbody></table></div><p class="cap htr"><b>How to read:</b> Teams are grouped by the playoff chance they were given after round 13. If the chances are honest, the last two columns are close.</p></div>
+    <div class="card"><div class="stat"><b>${B.brier.model.toFixed(3)}</b><span>average error of the playoff chances (Brier score; 0 = perfect, lower is better). Using only the record after round 13 and home court: ${B.brier.record.toFixed(3)}. Difference ${B.brier.diff.toFixed(3)}, 95% interval [${B.brier.diff_ci[0].toFixed(3)}, ${B.brier.diff_ci[1].toFixed(3)}]: probably better than the record alone, but not certainly.${EB?` A simple team Elo (its settings tuned on 2008–09 to 2017–18 only): ${EB.brier.elo.toFixed(3)}. Elo minus this model: ${EB.diff_elo_model[0]>=0?"+":""}${EB.diff_elo_model[0].toFixed(3)}, 95% interval [${EB.diff_elo_model[1].toFixed(3)}, ${EB.diff_elo_model[2].toFixed(3)}]: ${EB.diff_elo_model[1]>0?"this model is better than Elo.":EB.diff_elo_model[2]<0?"Elo is better than this model.":"the two cannot be told apart."}`:""}</span></div>
+     <p class="prose cap" style="margin-top:12px">The home edge, the scale and the spreads used here were measured on these same seasons, which flatters this check a little. The real test is this season.</p></div></div>
+   <div class="controls" style="margin-top:14px"><label>Season <select id="od-s">${Object.keys(B.seasons).sort((a,b)=>b-a).map(y=>`<option value="${y}">${season(+y)}</option>`).join("")}</select></label></div>
+   <div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>Wins after round 13</th><th id="od-h">Playoff chance after round 13</th><th>Final position</th><th class="l">Made it?</th></tr></thead><tbody id="od-b"></tbody></table></div><p class="cap htr"><b>How to read:</b> For a past season: the chance each team was given after round 13, next to where it actually finished. Playoffs = top 8 up to 2022–23, top 6 (direct) since 2023–24.</p>`;
+  const hm=document.getElementById("c-hm"), cells=T.flatMap(t=>t.p.map((v,i)=>({team:t.name,pos:i+1,v})));
+  hm.replaceChildren(Plot.plot({width:W(hm),height:T.length*24+60,marginLeft:W(hm)<620?52:mlFor(T.map(t=>cut(t.name)),7),marginRight:12,marginBottom:40,style:sty(),
+    x:{label:"final position →",ticks:[1,6,10,15,20],domain:d3.range(1,21)},y:{domain:T.map(t=>t.name),label:null,tickFormat:n=>W(hm)<620?(T.find(t=>t.name===n)||{}).t:cut(n)},
+    color:{type:"linear",domain:[0,0.5],range:[css("--soft"),css("--accent")],clamp:true},
+    marks:[Plot.cell(cells,{x:"pos",y:"team",fill:"v",inset:0.5}),Plot.ruleX([6.5,10.5],{stroke:css("--ink"),strokeWidth:1.5}),
+      Plot.tip(cells,Plot.pointer({x:"pos",y:"team",title:c=>`${c.team}\nposition ${c.pos}: ${pc(c.v)}`}))]}));
+  const hi=document.getElementById("c-hi"), H_=B.hist;
+  if(H_.length<2){hi.innerHTML=`<p class="cap">This chart fills in from the next weekly update: one point per update, starting from round 13.</p>`;}
+  else{const pts=H_.flatMap(h=>Object.entries(h.p).map(([t,v])=>({r:h.rmax,t,name:nm[t]||t,v:v[0]})));
+    hi.replaceChildren(Plot.plot({width:W(hi),height:320,marginBottom:40,marginRight:W(hi)<620?40:120,style:sty(),x:{label:"after round →",ticks:H_.map(h=>h.rmax)},y:{label:"↑ chance of top 6",domain:[0,1],tickFormat:"%",grid:true},
+      marks:[Plot.lineY(pts,{x:"r",y:"v",z:"t",stroke:css("--accent"),strokeOpacity:.35}),Plot.dot(pts,{x:"r",y:"v",fill:css("--accent"),r:2.5}),
+        Plot.text(pts.filter(p=>p.r===H_[H_.length-1].rmax),{x:"r",y:"v",text:"t",dx:14,fontSize:10,fill:css("--muted")}),
+        Plot.tip(pts,Plot.pointer({x:"r",y:"v",title:p=>`${p.name}\nafter round ${p.r}: ${pc(p.v)}`}))]}));
+    hi.insertAdjacentHTML("afterend",`<p class="cap htr"><b>How to read:</b> Each line = one team's chance of finishing in the top 6, one point per weekly update.</p>`);}
+  const sel=document.getElementById("od-s");
+  const draw=()=>{const y=sel.value, S=B.seasons[y], n=S.teams[0].p.reduce((a,b)=>a+b,0), tn=t=>{const r=TEAMS.find(x=>x.s===+y&&x.t===t);return r?r.name:t;};
+    document.getElementById("od-h").textContent=S.pi?"Top-6 chance after round 13":"Top-8 chance after round 13";
+    document.getElementById("od-b").innerHTML=S.teams.map(x=>({...x,pp:x.p.slice(0,S.cut).reduce((a,b)=>a+b,0)/n})).sort((a,b)=>b.pp-a.pp)
+      .map(x=>`<tr><td>${esc(tn(x.t))}</td><td class="mono">${x.w13}</td><td class="mono"><b>${pc(x.pp)}</b></td><td class="mono">${x.fin}</td><td class="l">${x.fin<=S.cut?"yes":"no"}</td></tr>`).join("");};
+  sel.addEventListener("input",draw); draw();
+  const l13=document.getElementById("lock13"); if(l13) l13.innerHTML=`<details style="margin-top:12px"><summary>The standings estimate locked after round 13 (21 Nov 2026), kept here as it was published</summary><div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>W–L</th><th>Top 6</th><th>7–10</th><th>1st</th></tr></thead><tbody>
+    ${B.now.teams.map(x=>{const p=x.p.map(v=>v/B.now.n),s6=p.slice(0,6).reduce((a,b)=>a+b,0),s10=p.slice(0,10).reduce((a,b)=>a+b,0);return {x,p,s6,s10};}).sort((a,b)=>b.s6-a.s6).map(({x,p,s6,s10})=>`<tr><td>${esc(nm[x.t]||x.t)}</td><td class="mono">${x.w13}–${x.g13-x.w13}</td><td class="mono">${pc(s6)}</td><td class="mono">${pc(s10-s6)}</td><td class="mono">${pc(p[0])}</td></tr>`).join("")}</tbody></table></div></details>`;
+}
+
+function viewMetrics(){
+  const D=CORE.diffs;
+  app.innerHTML=`<section><div class="kicker">The test</div><h2>Why not PIR</h2>
+   <p class="prose">A good player rating should tell you which lineups will outscore their opponents. To check that fairly, we compare lineups <em>of the same team in the same season</em>: when the coach puts a higher-rated five on the floor, does it do better? This removes team strength, which is where most box-score ratings get their credit. Every rating is built only from earlier seasons.</p>
+   <div class="card"><div id="c-met" class="plot"></div><p class="cap">Slope per 1 standard deviation of the rating difference between the two lineups, points per 100 possessions. 95% intervals from a bootstrap that resamples whole team-seasons, chosen because it kept its stated coverage in a simulation. 2018–19 to 2025–26.</p><p class="cap htr"><b>How to read:</b> Each row is one way of rating players. The dot shows how much more a lineup outscores its opponents, per 100 possessions, for each step up in that rating, compared with other lineups of the same team in the same season. Further right is better. The bar is the 95% range; a bar that crosses zero means no clear link.</p></div>
+   <div class="grid2">
+    <div class="card"><h3>Same box score, better weights</h3><p>Learned box score minus PIR: <b>${fmt(D["BOX-PIR"][0],2)}</b> [${D["BOX-PIR"][1].toFixed(2)}, ${D["BOX-PIR"][2].toFixed(2)}]. Both use the same box score, and each is pulled toward average by the amount its own data supports; swapping the two amounts changes almost nothing, so the gap comes from the weights.</p></div>
+    <div class="card"><h3>Points alone show no detectable link</h3><p>Rating players by points per 100 possessions gives <b>−0.28</b> [−0.88, 0.33]: the estimate is near zero, but the range cannot rule out a small positive effect. Game Score, which leans heavily on scoring, does worse than PIR (${fmt(D["GS-PIR"][0],2)}); NBA Efficiency does slightly better (${fmt(D["EFF-PIR"][0],2)}).</p></div>
+   </div></section>
+  <section><h2>What each event is worth</h2>
+   <div class="card"><div class="legend"><span><i style="background:var(--box)"></i>Learned from the data</span><span><i style="background:var(--pir)"></i>PIR, rescaled to the same units</span></div><div id="c-w" class="plot"></div>
+   <p class="cap">Value of one event in points of team margin, from a regression of 15 box-score rates on players' on-court impact (players with 3,000+ possessions). PIR's +1/−1/+2/+3 are multiplied by one common factor so both sets sit on the same scale.</p><p class="cap htr"><b>How to read:</b> Each pair of bars = the value of one event in points of team margin. Gold = learned from the data, grey = PIR's values on the same scale.</p></div>
+   <div class="prose"><p><b>Missed shots from the field cost more than PIR thinks.</b> A missed two is worth −0.37, while a made two is worth +0.17: a player needs to make roughly two of every three two-pointers just to break even. Steals (+1.15) and turnovers (−0.86) matter far more than PIR's ±1 suggests. Offensive rebounds are worth about zero, and in our weights committing a foul carries no penalty once the other stats are accounted for (a single regression weight, not proof that fouls are harmless).</p></div></section>
+  <section><h2>Is it luck?</h2><div class="card"><div class="legend"><span><i style="background:var(--pir)"></i>100 shuffles of ratings among teammates</span><span><i style="background:var(--accent)"></i>Real ratings</span></div><div id="c-perm" class="plot"></div><p class="cap">On-court impact only. Shuffling which teammate gets which rating keeps every team and lineup intact. None of the 100 shuffles comes close to the real result.</p><p class="cap htr"><b>How to read:</b> Grey bars = results when ratings are shuffled at random among teammates (100 times). Orange line = the real result. If the real result is far from all the grey ones, it is not luck.</p></div></section>
+  <section><h2>One honest limit</h2><p class="prose">For a single game, the learned box score is no better than PIR at describing what happened (correlation with the player's plus/minus 0.266 vs 0.260). The advantage shows over many games, not in one night's box score.</p></section>`;
+  metricsChart(document.getElementById("c-met"),false); weightsChart(document.getElementById("c-w"));
+  const el=document.getElementById("c-perm"), sh=CORE.perm.shuffled, real=CORE.perm.real;
+  el.replaceChildren(Plot.plot({width:W(el),height:220,marginBottom:40,style:sty(),x:{domain:[-1,2],grid:true,label:"slope →"},y:{label:"shuffles"},
+    marks:[Plot.rectY(sh,Plot.binX({y:"count"},{x:d=>d,thresholds:d3.range(-1,2.01,0.1),fill:css("--pir"),inset:1})),
+      Plot.ruleX([real],{stroke:css("--accent"),strokeWidth:3}),Plot.text([real],{x:d=>d,text:d=>`real: ${d.toFixed(2)}`,dx:-8,textAnchor:"end",frameAnchor:"top",dy:14,fill:css("--accent"),fontWeight:600}),Plot.ruleY([0],{stroke:css("--muted")})]}));
+}
+
+function lineupBuilder(){
+  const box=document.getElementById("lu-b"); if(!box) return;
+  getJ("lineups.json").then(L=>{
+    const top=Object.entries(L).filter(([k])=>k.startsWith(Math.max(...TEAMS.map(t=>t.s))+"_")).flatMap(([k,v])=>v.map(r=>({t:k.split("_")[1],ks:r[0],n:r[1]}))).sort((a,b)=>b.n-a.n);
+    const A=top[0], B=top.find(x=>x.t!==A.t)||top[1];
+    const side=(id,lab,ks)=>`<div><b>${lab}</b>${[0,1,2,3,4].map(i=>`<input id="${id}${i}" type="search" list="plist" aria-label="${lab} player ${i+1}" value="${BYKEY[ks[i]]?esc(BYKEY[ks[i]].name):""}" style="display:block;width:100%;margin:6px 0;font:inherit;font-size:16px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)">`).join("")}</div>`;
+    box.innerHTML=side("la",`Lineup A (${esc(A.t)})`,A.ks)+side("lb",`Lineup B (${esc(B.t)})`,B.ks);
+    const calc=()=>{const sum=id=>{let s=0,n=0,miss=[];for(let i=0;i<5;i++){const v=deacc(document.getElementById(id+i).value.trim());if(!v)continue;const p=CORE.players.find(x=>deacc(x.name)===v);if(p){s+=p.net;n++;}else miss.push(document.getElementById(id+i).value);}return {s,n,miss};};
+      const a=sum("la"), b=sum("lb"), out=document.getElementById("lu-r");
+      if(a.n<5||b.n<5){out.textContent=`Pick five known players on each side (${a.n} and ${b.n} so far).`;return;}
+      const d=a.s-b.s; out.innerHTML=`Expected: lineup ${d>=0?"A":"B"} outscores the other by <b>${Math.abs(d).toFixed(1)}</b> points per 100 possessions (A ${fmt(a.s)}, B ${fmt(b.s)}).`;};
+    box.querySelectorAll("input").forEach(x=>x.addEventListener("change",calc)); calc();});
+}
+
+function viewGlossary(){
+  const G=[["On-court impact","How many points per 100 possessions a player adds to his team's margin, compared with an average regular, after accounting for the other nine players on the floor. The main rating on this site."],
+   ["Learned box score","The same box-score events as PIR (points, rebounds, assists, turnovers…), but each event gets a value learned from the data: how much it goes together with outscoring the opponent. PIR gives fixed values instead (+1, −1, +2, +3)."],
+   ["Honours (titles and awards)","EuroLeague titles (the winner of each season's final, from the league game data) and the individual awards: MVP, Final Four MVP, Best Defender, Rising Star and the All-EuroLeague first and second teams, 2008–09 to 2025–26 (source: Wikipedia award pages). Shown on player pages and compared with the numbers on <a href='#awards'>Awards vs ratings</a>."],
+   ["Average regular","The reference point (zero). The average of all players with 3,000+ possessions, weighted by how much they played."],
+   ["Regular","A player with at least 3,000 possessions on the floor in 2008–09 to 2025–26. There are 615."],
+   ["Possession","One trip down the floor by one team, ending with a shot that scores, a defensive rebound, a turnover or the end of a period. A EuroLeague team has about 70–75 per game."],
+   ["Per 100 possessions","Numbers are scaled to 100 possessions, roughly one and a half games, so that players with different playing time can be compared."],
+   ["Range","The values that are still plausible given the data. A 90% range means the true value lies inside it with 90% probability. Wide range = little data or a hard case."],
+   ["Four Factors","Four team numbers that decide most of what happens on a possession: effective shooting (eFG%: made shots with threes counted 1.5, per shot attempt), turnovers (TOV%: turnovers per 100 plays, where plays = shots + 0.44 × free-throw attempts + turnovers), offensive rebounds (ORB%: share of own misses the team rebounds) and free throws (FT rate: free-throw attempts per shot attempt). On defense, the same numbers for the opponents."],
+   ["Pace","Possessions per team per game, counted from the play-by-play, overtime included."],
+   ["Chances for the final standings","Share of simulated seasons (10,000) in which a team finishes in a given place. They come from the frozen player ratings, who each team has been playing, home court and the results so far, and are updated once a week. They are a separate estimate from the locked test."],
+   ["Expected wins","The wins a team \"should\" have from the points it scored and allowed. Actual minus expected wins (shown as 'wins above expected') is the part the points do not explain; it usually comes from close games and rarely carries over to the next season."]];
+  app.innerHTML=`<section><div class="kicker">Terms used on this site</div><h2>Glossary</h2><div class="prose">${G.map(([a,b])=>`<p><b>${a}.</b> ${b}</p>`).join("")}</div></section>`;
+}
+
+function viewHow(){
+  app.innerHTML=`<section><div class="kicker">Method, in plain words</div><h2>How it works</h2>
+   <div class="tablewrap" style="max-width:780px;margin:8px 0 18px"><table><thead><tr><th class="l">What goes in</th><th>On-court impact</th><th>Learned box score</th><th>PIR</th></tr></thead><tbody>
+    <tr><td class="l">Who was on the floor, possession by possession</td><td>yes</td><td>only to learn the values</td><td>no</td></tr>
+    <tr><td class="l">Points scored on each possession</td><td>yes</td><td>only to learn the values</td><td>no</td></tr>
+    <tr><td class="l">Box score (points, rebounds, assists, steals, blocks, turnovers, fouls…)</td><td>no (free-throw % only)</td><td>yes, all 15 events</td><td>yes</td></tr>
+    <tr><td class="l">Team record or standings</td><td>no</td><td>no</td><td>no</td></tr>
+    <tr><td class="l">Value of each event</td><td>—</td><td>learned from the data</td><td>fixed (+1, −1, +2, +3)</td></tr></tbody></table></div><p class="cap htr"><b>How to read:</b> On-court impact uses only who was on the floor and the score; it never sees rebounds or assists. The learned box score uses the box score, with values learned from how lineups scored in earlier seasons. PIR adds and subtracts box-score events with fixed values.</p>
+   <div class="prose">
+   <p><b>1. Every possession is a small experiment.</b> For each possession since 2008 we know the ten players on the floor and how many points were scored. A player who is on the floor when his team keeps outscoring opponents, whoever his teammates are, gets credit.</p>
+   <p><b>2. Separating teammates.</b> Players who always play together are hard to tell apart, so the model pulls every player toward average and only lets the data move him away from it. Players with few possessions stay close to average; that is why the uncertainty strips are wide for them.</p>
+   <p><b>3. Removing free-throw luck.</b> Whether a free throw goes in says little about the other players on the floor, so made free throws are replaced by the shooter's expected percentage. The gain is small but consistent: prediction error per possession improved by 0.004 percentage points [0.001, 0.007], and the within-team slope by 0.06 [0.01, 0.12].</p>
+   <p><b>4. Learning the box-score weights.</b> We then ask which mix of box-score stats best tracks players' on-court impact. The answer is the learned box score: same events as PIR, different weights.</p>
+   <p><b>5. Testing honestly.</b> Ratings are always built from earlier seasons and tested on later ones. The decision rules for the main tests were written down before running them, and results that did not work are reported too.</p></div>
+   <div class="card" style="max-width:780px"><h3>Try it: two lineups</h3><p class="cap">Pick five players for each side. The expected margin is the sum of the five career on-court impacts of one side minus the other's, per 100 possessions, before home court. It ignores how well the five fit together, and it shows no range (that would need the joint uncertainty of all ten players). Pre-filled with the two most-used lineups of 2025–26.</p>
+    <div class="grid2" id="lu-b"></div><p class="sentence" id="lu-r"></p></div>
+   <details><summary>What this does not claim</summary><ul><li>It does not rank players one by one: only 32 of 615 regulars stand out clearly.</li><li>It says little about a single game.</li><li>Career ratings look back over 2008–09 to 2025–26; they are not forecasts.</li><li>The main test compares lineups of the same team, so it answers "which five does better", not "which player is better across the league". The locked 2026–27 test predicts games between different teams; that is where the cross-team question gets answered.</li><li>The 2018–2025 test seasons were also used to choose settings (such as the amount of shrinkage and which version to adopt), so they are not a fully clean test. The clean checks are the 2026–27 test locked in advance and, later, the NBA.</li><li>The learned box score gets its weights from lineup scoring, the same kind of outcome it is tested on; PIR, Efficiency and Game Score are fixed formulas. The comparison is learned weights versus fixed formulas, not equal footing.</li><li>Our intervals were checked by simulation both with no real effect and with a real effect about as large as the one we report; in both cases they proved slightly conservative (they contained the true value 99.5% of the time instead of 95%).</li></ul></details>
+   <details><summary>Ideas that did not help</summary><ul><li>Giving less weight to old seasons; more weight to clutch minutes or less to garbage time.</li><li>A starting point that depends on how much a player has played.</li><li>Adding EuroCup games to the training data.</li><li>Using age to predict next season&#8217;s box score. Rule fixed in advance. An age curve learned on 2008&#8211;2017 made predictions for 2018&#8211;2025 worse by about 5% [2%, 8%]. A check inside 2008&#8211;2017 had already shown no gain (&#8722;0.2%), and re-learning the curve each year (rolling) gave &#8722;1.7%, not distinguishable from zero. Most of the loss comes from players aged 30&#8211;33, who in 2018&#8211;2025 declined much less than the 2008&#8211;2017 curve expected (seen after the test, not tested). The spread of box scores was also about a quarter smaller in 2018&#8211;2025, so the same curve weighs more against the remaining error. Caveat: the sample is selective; even at ages 26&#8211;29, 39% of players with 300+ possessions in one season did not reach 300 the next. The result shows that this age curve did not help predict next season&#8217;s box score; it does not show that age does not matter.</li></ul></details>
+   <details><summary>Details for statisticians</summary><ul><li>Ridge regression per possession (offense and defense per player), λ = 3,300 chosen by marginal likelihood; free throws luck-adjusted with shooter percentages shrunk with K = 150.</li><li>Main test: lineup rating difference vs points per possession, team-season fixed effects for both sides, slope per 1 SD, 95% intervals from a dyadic bootstrap stratified by season (coverage 0.995 in simulation with no effect and 0.995 with a real effect of +0.24; two-way clustering under-covered at 0.91 with no effect).</li><li>Uncertainty strips use the analytic posterior with the full covariance; rank ranges from 2,000 joint draws.</li><li>An out-of-sample forecast for the rest of the 2026–27 regular season was locked on 21 Nov 2026 (SHA-256 2224e469…) and will be scored once, after round 38.</li></ul></details>
+   <details><summary>Others doing similar work</summary><ul>
+    <li><a href="https://konstantinoslaloudakis.github.io/euroleague-analytics/about.html">Euroleague Analytics (K. Laloudakis)</a>: RAPM with a box-score prior for the current season, plus a "Weighted Impact Rating" as a PIR alternative.</li>
+    <li><a href="https://thereadstep.substack.com/p/openfloor-3-introduction-to-models">OpenFloor</a>: a EuroLeague RAPM over five seasons.</li>
+    <li>N. Cheliotis, MSc thesis "Shot-Context RAPM for Euroleague Basketball": luck-adjusted RAPM split by shot zone, 2007–08 to 2025–26.</li>
+    <li>Academic work: Grassetti and Bellio (Bayesian lineup RAPM, 2018–19), Carta and Favero (WINSCORE versus PIR, 2026).</li></ul>
+    <p class="cap">Their numbers are not compared here: none of them offers a download or states terms for reuse, and they cover different seasons. What is specific to this project is the advance-written tests, the interval coverage checked by simulation, and the split of the box-score advantage into weights versus smoothing.</p></details>
+   <details><summary>Correction log</summary><ul><li>Nov 2026: an earlier private draft showed the value of a made shot incorrectly (it added the value of a miss). Made two-pointers are worth +0.17, not −0.20. The ratings themselves were not affected.</li><li>Nov 2026: after an independent review, two statements were toned down: point totals show "no detectable link" (not "predict nothing"), and the foul weight is described as one regression weight rather than proof. Three limitations were added above.</li><li>Nov 2026, second review: the smoothing of PIR and the learned box score is described correctly (each has its own amount), the clutch verdict now says how large an effect the test can rule out, and the lineup "best estimate" uses the measured spread of points per possession (1.39 instead of an assumed 1.25), which pulls short-lived lineups more strongly toward their expected value.</li></ul></details>
+  </section>`;
+  lineupBuilder();
+}
+
+Promise.all([fetch("data/core.json").then(r=>r.json()),fetch("data/teams.json").then(r=>r.json())]).then(([c,t])=>{
+  c.players.forEach(p=>p.name=fixName(p.name)); t.forEach(x=>x.name=fixName(x.name)); Object.keys(c.teamnames).forEach(k=>c.teamnames[k]=fixName(c.teamnames[k]));
+  CORE=c; TEAMS=t; c.players.forEach(p=>BYKEY[p.k]=p);
+  document.getElementById("plist").innerHTML=c.players.filter(p=>p.poss>=1000).map(p=>`<option value="${esc(p.name)}">`).join("");
+  [document.getElementById("navq"),document.getElementById("sheetq")].forEach(nq=>nq&&nq.addEventListener("change",()=>{const p=c.players.find(x=>deacc(x.name)===deacc(nq.value.trim()));if(p){location.hash="p-"+p.k;nq.value="";}}));
+  document.querySelectorAll("nav.top details.more").forEach(d=>d.addEventListener("toggle",()=>{if(d.open) document.querySelectorAll("nav.top details.more").forEach(o=>{if(o!==d) o.open=false;});}));
+  document.addEventListener("click",e=>{if(!e.target.closest("nav.top details.more")) document.querySelectorAll("nav.top details.more").forEach(d=>d.open=false);});
+  document.getElementById("tbm").addEventListener("click",()=>{const sh=document.getElementById("sheet");sh.classList.toggle("open");});
+  document.getElementById("thm").addEventListener("click",()=>{const r=document.documentElement, dark=getComputedStyle(r).getPropertyValue("--bg").trim().toLowerCase()==="#0c1726"; r.dataset.theme=dark?"light":"dark"; try{localStorage.setItem("bp-theme",r.dataset.theme);}catch(e){} route();});
+  route();
+}).catch(e=>{app.innerHTML=`<p style="padding:40px 0">The data could not be loaded (${esc(e.message)}). Reload the page to try again.</p>`;});
+})();
+</script>
+</body>
+</html>
