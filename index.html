@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Beyond PIR</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%2711%27 fill=%27%23ff6a1a%27/%3E%3Cpath d=%27M12 1v22M1 12h22M4.2 4.2c3.5 3.2 3.5 12.4 0 15.6M19.8 4.2c-3.5 3.2-3.5 12.4 0 15.6%27 fill=%27none%27 stroke=%27%23050b14%27 stroke-width=%271.4%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
@@ -32,7 +33,7 @@ a{color:var(--link);text-decoration:none} a:hover{text-decoration:underline}
 nav.top{position:sticky;top:0;z-index:20;background:var(--board);border-bottom:2px solid var(--accent);color:#f4f1ea}
 nav.top .wrap{display:flex;gap:20px;align-items:center;height:60px}
 nav.top .brand{font-family:var(--display);font-weight:700;font-size:23px;letter-spacing:.02em;text-transform:uppercase;margin-right:auto;color:#f4f1ea;display:flex;align-items:center;gap:10px;text-decoration:none}
-.ball{width:20px;height:20px;border-radius:50%;background:var(--accent);position:relative;overflow:hidden;flex:none;display:inline-block}.ball:before,.ball:after{content:"";position:absolute;border:1.5px solid var(--board)}.ball:before{inset:-2px 8px}.ball:after{inset:8px -2px}
+.ball{width:20px;height:20px;flex:none;display:inline-block}.ball circle{fill:var(--accent)}.ball path{fill:none;stroke:var(--board);stroke-width:1.4}
 nav.top .links{display:flex;gap:18px;align-items:center}
 nav.top a.l{color:#9fb0c6;font-family:var(--display);font-size:14.5px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;text-decoration:none}
 nav.top a.l.on,nav.top a.l:hover{color:#fff}
@@ -146,7 +147,7 @@ nav.top details.more{background:none;border:0;padding:0;margin:0;max-width:none}
 <body>
 <nav class="top" aria-label="Main">
   <div class="wrap">
-    <a class="brand" href="#home"><span class="ball" aria-hidden="true"></span>Beyond PIR</a>
+    <a class="brand" href="#home"><svg class="ball" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11"/><path d="M12 1v22M1 12h22M4.2 4.2c3.5 3.2 3.5 12.4 0 15.6M19.8 4.2c-3.5 3.2-3.5 12.4 0 15.6"/></svg>Beyond PIR</a>
     <div class="links">
     <a class="l" data-r="players" href="#players">Players</a>
     <a class="l" data-r="vs" href="#vs">Compare</a>
@@ -273,7 +274,7 @@ function winsChart(el,rows){
   el.replaceChildren(Plot.plot({width:w,height:Math.max(260,R.length*30+50),marginLeft:ml,marginRight:16,marginBottom:40,style:sty(),
     x:{domain:[0,gmax],grid:true,label:"wins →"},y:{domain:R.map(lab),label:null,padding:.12},
     marks:[Plot.barX(R,{y:lab,x:"w",fill:css("--accent"),insetTop:2,insetBottom:13}),
-      Plot.barX(R,{y:lab,x:"xw",fill:css("--pir"),insetTop:13,insetBottom:2}),
+      Plot.barX(R,{y:lab,x:"xw",fill:css("--accent"),fillOpacity:.4,insetTop:13,insetBottom:2}),
       Plot.ruleX([0],{stroke:css("--muted")}),
       Plot.tip(R,Plot.pointerY({y:lab,x:"w",title:t=>`${t.name}\n${t.w} wins of ${t.gp} · expected ${t.xw.toFixed(1)}`}))]}));
 }
@@ -842,7 +843,7 @@ async function viewTeams(){
   app.innerHTML=`<section><div class="kicker">Team seasons · 2008–09 to 2025–26</div><h2>Teams</h2>
    <p class="prose">Wins against expected wins. Expected wins come from points scored and allowed (a "Pythagorean" formula fitted on 2008–2017). A team far above its expected wins won many close games; that rarely carries over to the next season.</p>
    <div class="controls"><label>Season <select id="ss">${seasons.map(s=>`<option value="${s}">${season(s)}</option>`).join("")}</select></label></div>
-   <div class="card"><div class="legend"><span><i style="background:var(--pir)"></i>Expected wins</span><span><i style="background:var(--accent)"></i>Actual wins</span></div><div id="c-tw" class="plot"></div><p class="cap htr"><b>How to read:</b> Grey bar = wins expected from points scored and allowed. Orange bar = actual wins. The gap is the part of the record that points scored and allowed do not explain; for most teams it does not carry over to the next season.</p></div>
+   <div class="card"><div class="legend"><span><i style="background:var(--accent);opacity:.4"></i>Expected wins</span><span><i style="background:var(--accent)"></i>Actual wins</span></div><div id="c-tw" class="plot"></div><p class="cap htr"><b>How to read:</b> Faded orange bar = wins expected from points scored and allowed. Solid orange bar = actual wins. The gap is the part of the record that points scored and allowed do not explain; for most teams it does not carry over to the next season.</p></div>
    <div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>W–L</th><th>Expected W</th><th>Wins above expected</th><th>Net / 100</th><th>Pts for</th><th>Pts against</th><th title="Possessions per team per game">Pace</th>${FFN.map(f=>`<th title="${f[1]} (offense)">${f[0]}</th>`).join("")}</tr></thead><tbody id="ttb"></tbody></table></div><p class="cap htr"><b>How to read:</b> Wins above expected = actual minus expected wins (the part the points do not explain; often close games). Net / 100 = points scored minus allowed per 100 possessions.</p><p class="cap htr"><b>How to read:</b> Pace = possessions per team per game (overtime included). eFG%, TOV%, ORB% and FT rate are the team's own offense (the "Four Factors"; see the Glossary). Lower TOV% is better.</p>
    <div class="card" style="margin-top:14px"><h3>Pace and results</h3><div id="c-pn" class="plot"></div><p class="cap htr"><b>How to read:</b> Each dot = one team this season. Horizontal: possessions per game. Vertical: points scored minus allowed per 100 possessions. A flat cloud means playing fast or slow did not go with winning or losing.</p></div></section>`;
   const sel=document.getElementById("ss");
@@ -963,7 +964,7 @@ async function viewSeason(){
   const Sx=await getJ("season2026.json"), rows=Sx.teams.map(t=>({...t,name:fixName(t.name)})).sort((a,b)=>b.w-a.w||b.mpg-a.mpg);
   app.innerHTML=`<section><div class="kicker">Data through round ${Sx.round} (${esc(Sx.last_date)}) · ${Sx.games} games</div><h2>Season 2026–27</h2>
    <p class="prose">Standings with expected wins from the points margin. A forecast for the rest of the regular season was locked before round ${(Sx.r0||13)+1} and will be scored once, after round 38. The chances for the final standings further down use the same frozen player ratings, but they are a separate weekly estimate and play no part in that test.</p>
-   <div class="card"><div class="legend"><span><i style="background:var(--pir)"></i>Expected wins</span><span><i style="background:var(--accent)"></i>Actual wins</span></div><div id="c-s26" class="plot"></div><p class="cap htr"><b>How to read:</b> Same reading as the Teams chart: grey bar = wins expected from points scored and allowed, orange bar = actual wins.</p></div>
+   <div class="card"><div class="legend"><span><i style="background:var(--accent);opacity:.4"></i>Expected wins</span><span><i style="background:var(--accent)"></i>Actual wins</span></div><div id="c-s26" class="plot"></div><p class="cap htr"><b>How to read:</b> Same reading as the Teams chart: faded orange bar = wins expected from points scored and allowed, solid orange bar = actual wins.</p></div>
    <div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>W–L</th><th>Expected W</th><th>Wins above expected</th><th>Margin / game</th></tr></thead><tbody>
    ${rows.map(t=>`<tr><td><a href="#t26-${t.t}">${esc(t.name)}</a></td><td class="mono">${t.w}–${t.gp-t.w}</td><td class="mono" title="${t.xw.toFixed(1)}">${Math.round(t.xw)}</td><td class="mono">${fmt(t.w-Math.round(t.xw),0)}</td><td class="mono">${fmt(t.mpg)}</td></tr>`).join("")}</tbody></table></div><p class="cap htr"><b>How to read:</b> Wins above expected = actual minus expected wins (the part the points do not explain; often close games). Margin / game = average points scored minus allowed.</p></section>
   <section id="odds"><p class="cap">Loading chances…</p></section>
