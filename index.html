@@ -156,6 +156,7 @@ nav.top details.more{background:none;border:0;padding:0;margin:0;max-width:none}
     <details class="more" data-g="data"><summary>Data ▾</summary><div class="menu">
     <a class="l" data-r="teams" href="#teams">Teams</a>
     <a class="l" data-r="league" href="#league">League</a>
+    <a class="l" data-r="giants" href="#giants">The giants</a>
     <a class="l" data-r="awards" href="#awards">Awards vs ratings</a>
     </div></details>
     <details class="more" data-g="play"><summary>Play ▾</summary><div class="menu">
@@ -178,7 +179,7 @@ nav.top details.more{background:none;border:0;padding:0;margin:0;max-width:none}
   </div>
 </nav>
 <div class="tabbar" aria-label="Sections"><a href="#home" data-t="home">Home</a><a href="#players" data-t="players">Players</a><a href="#vs" data-t="vs">Compare</a><a href="#season" data-t="season">2026–27</a><button id="tbm" aria-expanded="false">More</button></div>
-<div class="sheet-bd" id="sheetbd"></div><div class="sheet" id="sheet"><input id="sheetq" type="search" placeholder="Find a player" aria-label="Find a player" list="plist"><div class="sh-h">Data</div><a href="#players">Players</a><a href="#vs">Compare</a><a href="#season">2026–27</a><a href="#teams">Teams</a><a href="#league">League</a><a href="#awards">Awards vs ratings</a><div class="sh-h">Play</div><a href="#explore">Explore</a><a href="#build">Make your own PIR</a><a href="#dist">Distributions</a><a href="#clutch">Clutch?</a><div class="sh-h">Method</div><a href="#start">Start here</a><a href="#metrics">Why not PIR</a><a href="#tried">What we tried</a><a href="#how">How it works</a><a href="#glossary">Glossary</a></div>
+<div class="sheet-bd" id="sheetbd"></div><div class="sheet" id="sheet"><input id="sheetq" type="search" placeholder="Find a player" aria-label="Find a player" list="plist"><div class="sh-h">Data</div><a href="#players">Players</a><a href="#vs">Compare</a><a href="#season">2026–27</a><a href="#teams">Teams</a><a href="#league">League</a><a href="#giants">The giants</a><a href="#awards">Awards vs ratings</a><div class="sh-h">Play</div><a href="#explore">Explore</a><a href="#build">Make your own PIR</a><a href="#dist">Distributions</a><a href="#clutch">Clutch?</a><div class="sh-h">Method</div><a href="#start">Start here</a><a href="#metrics">Why not PIR</a><a href="#tried">What we tried</a><a href="#how">How it works</a><a href="#glossary">Glossary</a></div>
 <main class="wrap" id="app"><p class="kicker" style="padding:40px 0">Loading data…</p></main>
 <footer><div class="wrap">
   <p>Data: www.euroleague.net and/or www.eurocupbasketball.com. Ratings, charts and analysis are my own. Independent, non-commercial project, not affiliated with Euroleague Basketball.</p>
@@ -225,7 +226,7 @@ function strip(p,w=120,h=14){ // shaded 50/80/95 strip, normal approx from 90% r
 }
 
 // ---------------- routing
-const routes={home:viewHome,players:viewPlayers,teams:viewTeams,metrics:viewMetrics,how:viewHow,league:viewLeague,clutch:viewClutch,season:viewSeason,tried:viewTried,glossary:viewGlossary,build:viewBuild,explore:viewExplore,dist:viewDist,start:viewStart,awards:viewAwards};
+const routes={home:viewHome,players:viewPlayers,teams:viewTeams,metrics:viewMetrics,how:viewHow,league:viewLeague,clutch:viewClutch,season:viewSeason,tried:viewTried,glossary:viewGlossary,build:viewBuild,explore:viewExplore,dist:viewDist,start:viewStart,awards:viewAwards,giants:viewGiants};
 const J={}; const getJ=async f=>J[f]||(J[f]=await (await fetch("data/"+f)).json());
 let QP=new URLSearchParams();
 const SHARE_BASE=/claudeusercontent\.com$/.test(location.hostname)?"https://claude.ai/artifact/H6qpxEtYRqdjURrGbFRCQw":location.href.split("#")[0];
@@ -594,6 +595,44 @@ function viewStart(){
    <li>Nothing here is a betting tool. The 2026–27 chances describe the standings, not single games.</li></ul></div></section>`;
 }
 
+// ---------------- giants (25 Nov)
+async function viewGiants(){
+  const Gd=await getJ("giants.json");
+  const res=r=>r.champ?"🏆 Champion":r.final?"Final":r.f4?"Final Four":"—";
+  app.innerHTML=`<section><div class="kicker">2008–09 to 2025–26 · titles since 2000–01</div><h2>The giants</h2>
+   <p class="prose">Which clubs have been the most successful? Titles, finals, Final Fours and playoff runs, next to regular-season record and points margin. There is no single "success score": how many Final Fours a title is worth is a matter of taste, so click a column to rank by it.</p>
+   <div class="tablewrap"><table class="sortable" id="gt"><thead><tr><th class="l" data-k="name">Team</th><th data-k="seasons">Seasons</th><th data-k="titles" title="EuroLeague titles 2008–09 to 2025–26">Titles</th><th data-k="titles_pre" title="EuroLeague titles 2000–01 to 2007–08">Titles 2000–08</th><th data-k="finals">Finals</th><th data-k="f4">Final Fours</th><th data-k="po" title="Seasons with a playoff series (from 2008–09)">Playoffs</th><th data-k="wl">W–L</th><th data-k="wp">Win %</th><th data-k="net" title="Average regular-season points margin per 100 possessions">Net / 100</th></tr></thead><tbody></tbody></table></div>
+   <p class="cap htr"><b>How to read:</b> Seasons, finals, Final Fours and playoffs count 2008–09 to 2025–26 (no Final Four in 2019–20). W–L, Win % and Net / 100 are regular season only. Click a column header to sort.</p></section>
+   <section><h2>Season by season</h2><p class="prose cap">The eight clubs with the most titles and Final Fours. Line = regular-season net per 100 possessions. Ring = Final Four. Filled dot = title.</p><div class="grid2" id="gy"></div></section>
+   <section><h2>The strongest team seasons since 2008</h2><p class="prose cap">Ranked by regular-season points margin per 100 possessions. Seasons with only 16 regular-season games (2008–09 to 2011–12) vary more, so a few of them sit high partly by chance. Roster strength = minutes-weighted sum of the players' career on-court impact.</p>
+   <div class="tablewrap"><table><thead><tr><th>#</th><th class="l">Season</th><th class="l">Team</th><th>W–L</th><th>Net / 100</th><th title="Share-weighted sum of the players' career impact">Roster strength</th><th class="l">Result</th><th class="l">Most used players (career impact)</th></tr></thead><tbody>
+   ${Gd.best.map((r,i)=>`<tr><td class="mono">${i+1}</td><td class="l">${season(r.s)}</td><td class="l"><a href="#t-${r.s}-${r.t}">${esc(r.name)}</a></td><td class="mono">${r.w}–${r.gp-r.w}</td><td class="mono">${fmt(r.net)}</td><td class="mono">${fmt(r.strength)}</td><td class="l">${res(r)}</td><td class="l" style="white-space:normal">${r.top.map(([k,n,v])=>`<a href="#p-${k}">${esc(n)}</a> <span class="mono">${fmt(v)}</span>`).join(", ")}</td></tr>`).join("")}
+   </tbody></table></div><p class="cap htr"><b>How to read:</b> Result = how far the team went that season. A very strong regular season often ends without the title: the Final Four is two single games.</p></section>
+   <section><h2>Luck at the Final Four</h2><p class="prose" id="f4-txt"></p><div class="grid2"><div class="card"><h3>Least expected titles</h3><div id="f4-up"></div></div><div class="card"><h3>Titles: expected and won, 2008–09 to 2025–26</h3><div id="f4-cl"></div></div></div>
+   <p class="cap htr"><b>How to read:</b> Chance = the team's estimated chance of the title just before that Final Four. Expected titles = the sum of those chances over all its Final Fours. "Luck" here only means the gap from this model, not that a champion did not deserve it.</p></section>`;
+  try{const F=await getJ("f4luck.json"), t=F.test;
+    document.getElementById("f4-txt").textContent=`Before each of the ${t.n_tours} Final Fours since 2008–09 we estimated every team's chance of the title from its points margin per 100 possessions that season up to the Final Four (shrunk toward average), using the same game model as the 2026–27 odds and the real bracket. The favourite of each game won only ${Math.round(100*t.fav_won)}% of the ${t.n_games} Final Four games, and the estimates did not beat simply giving each team 25% (Brier ${t.brier.toFixed(3)} vs ${t.base.toFixed(3)}; difference ${fmt(t.d,3)} [${fmt(t.lo,3)}, ${fmt(t.hi,3)}], test fixed in advance). By this measure the Final Four is close to a coin toss between four strong teams; 17 tournaments are too few to say more.`;
+    const up=F.rows.filter(r=>r.champ).sort((a,b)=>a.p-b.p).slice(0,8);
+    document.getElementById("f4-up").innerHTML=`<table><thead><tr><th class="l">Season</th><th class="l">Champion</th><th>Chance</th></tr></thead><tbody>${up.map(r=>`<tr><td class="l">${season(r.s)}</td><td class="l"><a href="#t-${r.s}-${r.t}">${esc(r.name)}</a></td><td class="mono">${Math.round(100*r.p)}%</td></tr>`).join("")}</tbody></table>`;
+    document.getElementById("f4-cl").innerHTML=`<table><thead><tr><th class="l">Club</th><th>Final Fours</th><th>Expected</th><th>Won</th></tr></thead><tbody>${F.clubs.filter(c=>c.f4>=2||c.act>0).map(c=>`<tr><td class="l">${esc(c.name)}</td><td class="mono">${c.f4}</td><td class="mono">${c.exp.toFixed(1)}</td><td class="mono">${c.act}</td></tr>`).join("")}</tbody></table>`;}catch(e){}
+  const rows=Gd.teams.filter(r=>r.seasons>=5||r.titles_pre>0).map(r=>({...r,wl:r.w,wp:r.gp?r.w/r.gp:null}));
+  let key="titles",dir=-1;
+  const tb=document.querySelector("#gt tbody");
+  function draw(){const R=rows.slice().sort((a,b)=>{const x=a[key],y=b[key]; if(key==="name") return dir*String(x).localeCompare(String(y)); if(x==null) return 1; if(y==null) return -1; return dir*(x-y)||((b.titles+b.titles_pre)-(a.titles+a.titles_pre))||(b.f4-a.f4);});
+    tb.innerHTML=R.map(r=>`<tr><td class="l">${esc(r.name)}</td><td class="mono">${r.seasons}</td><td class="mono">${r.titles}</td><td class="mono">${r.titles_pre}</td><td class="mono">${r.finals}</td><td class="mono">${r.f4}</td><td class="mono">${r.po}</td><td class="mono">${r.gp?r.w+"–"+(r.gp-r.w):"—"}</td><td class="mono">${r.wp!=null?Math.round(100*r.wp)+"%":"—"}</td><td class="mono">${r.gp?fmt(r.net):"—"}</td></tr>`).join("");
+    document.querySelectorAll("#gt th").forEach(th=>th.classList.toggle("on",th.dataset.k===key));}
+  document.querySelectorAll("#gt th").forEach(th=>{th.style.cursor="pointer";th.addEventListener("click",()=>{const k=th.dataset.k; if(k===key) dir=-dir; else {key=k; dir=k==="name"?1:-1;} draw();});});
+  draw();
+  const box=document.getElementById("gy");
+  Gd.big.forEach(t=>{const d=Gd.years.filter(y=>y.t===t).sort((a,b)=>a.s-b.s); const c=document.createElement("div"); c.className="card"; c.innerHTML=`<h3>${esc(Gd.names[t]||t)}</h3><div class="plot"></div>`; box.appendChild(c);
+    const el=c.querySelector(".plot");
+    el.replaceChildren(Plot.plot({width:W(el),height:170,marginBottom:28,marginLeft:34,style:sty(),x:{domain:[2008,2025],tickFormat:x=>season(x),ticks:[2008,2013,2018,2023],label:null},y:{domain:[-15,28],label:"net / 100",grid:true},
+      marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.line(d,{x:"s",y:"net",stroke:css("--muted")}),
+        Plot.dot(d.filter(r=>r.f4&&!r.champ),{x:"s",y:"net",r:5,stroke:css("--accent"),strokeWidth:2}),
+        Plot.dot(d.filter(r=>r.champ),{x:"s",y:"net",r:5.5,fill:css("--accent")}),
+        Plot.tip(d,Plot.pointerX({x:"s",y:"net",title:r=>`${season(r.s)}: ${r.w}–${r.gp-r.w}, net ${fmt(r.net)}\n${res(r)}`}))]}));});
+}
+
 // ---------------- titles and awards (24 Nov)
 const AWL={CHAMP:["EuroLeague champion","🏆"],MVP:["MVP","★"],F4MVP:["Final Four MVP","★"],DEF:["Best Defender","🛡"],RS:["Rising Star","↗"],TOP:["Top scorer","●"],ALL1:["All-EuroLeague 1st team",""],ALL2:["All-EuroLeague 2nd team",""],DEC:["All-Decade Team",""],A25:["25th Anniversary Team",""],LEG:["EuroLeague Legend",""]};
 const AWORD=["CHAMP","MVP","F4MVP","DEF","RS","TOP","ALL1","ALL2","DEC","A25","LEG"];
@@ -613,7 +652,9 @@ function seasonRanks(G){ // per season: players with ≥35% of the season's top 
     R[s]={n:Q.length,rp:Object.fromEntries(rp.map((d,i)=>[d.k,i+1])),rb:Object.fromEntries(rb.map((d,i)=>[d.k,i+1])),topP:rp[0],topB:rb[0]};});
   return R;}
 async function viewAwards(){
-  const [A,G]=await Promise.all([getJ("awards.json"),getJ("games.json")]); const R=seasonRanks(G), P=A.p;
+  const [A,G,EA,GD]=await Promise.all([getJ("awards.json"),getJ("games.json"),getJ("awards_early.json").catch(()=>[]),getJ("giants.json").catch(()=>({champ:{},names:{}}))]);
+  const CH=Object.entries(A.champ_pre||{}).map(([y,n])=>[+y,n,null]).concat(Object.entries(A.champ||{}).map(([y,t])=>{const tm=TEAMS.find(x=>x.s===+y&&x.t===t); return [+y,tm?tm.name:(GD.names[t]||t),tm?t:null];})).sort((a,b)=>b[0]-a[0]);
+  const CHC=d3.rollups(Object.entries(GD.champ||{}),v=>v.length,([y,t])=>GD.names[t]||({VIR:"Virtus Bologna"}[t])||t).sort((a,b)=>b[1]-a[1]); const R=seasonRanks(G), P=A.p;
   const who=(s,a)=>Object.keys(P).filter(k=>P[k].some(x=>x[0]===s&&x[1]===a));
   const picks=[]; Object.entries(P).forEach(([k,L])=>L.forEach(([s,a])=>{if((a==="ALL1"||a==="ALL2")&&R[s]&&R[s].rp[k]) picks.push({k,s,a,rp:R[s].rp[k],rb:R[s].rb[k],n:R[s].n});}));
   const med=v=>d3.median(v), t10=f=>picks.filter(d=>d[f]<=10).length/picks.length;
@@ -635,6 +676,12 @@ async function viewAwards(){
   <section><h2>Season by season</h2><div class="tablewrap"><table class="awt"><thead><tr><th class="l">Season</th><th class="l">Champion</th><th class="l">MVP</th><th class="l">Final Four MVP</th><th class="l">Best Defender</th><th class="l">Rising Star</th><th class="l">Top by PIR / 100</th><th class="l">Top by learned box / 100</th></tr></thead><tbody>
    ${seasons.map(s=>`<tr><td>${season(s)}</td><td class="l"><a href="#t-${s}-${A.champ[s]}">${esc(tname(s,A.champ[s]))}</a></td>${["MVP","F4MVP","DEF","RS"].map(a=>`<td class="l">${who(s,a).map(k=>nm(k)+(a==="MVP"?rk(s,k):"")).join(", ")||"—"}</td>`).join("")}<td class="l">${R[s]?nm(R[s].topP.k)+` <span class="cap">${R[s].topP.p100.toFixed(1)}</span>`:"—"}</td><td class="l">${R[s]?nm(R[s].topB.k)+` <span class="cap">${fmt(R[s].topB.b100,1)}</span>`:"—"}</td></tr>`).join("")}
    </tbody></table></div><p class="cap htr"><b>How to read:</b> “PIR #3 · box #11” under an MVP = he ranked 3rd by PIR per 100 and 11th by the learned box score that season. Regular season and playoffs counted together. 2019–20 had no Final Four and no awards. Titles and awards from 2000–01 to 2007–08 are shown on player pages; the rankings start in 2008–09 because our play-by-play data starts there.</p></section>
+  <section><h2>Champions since 2000–01</h2><p class="prose">Every EuroLeague champion since the competition was relaunched by Euroleague Basketball in 2000–01. That first season the rival FIBA SuproLeague was also played (won by Maccabi Tel Aviv); it is not counted here.</p>
+   <div class="tablewrap"><table class="awt"><thead><tr><th class="l">Season</th><th class="l">Champion</th></tr></thead><tbody>${CH.map(([y,n,t])=>`<tr><td class="l">${season(y)}</td><td class="l">${t?`<a href="#t-${y}-${t}">${esc(n)}</a>`:esc(n)}</td></tr>`).join("")}</tbody></table></div>
+   <p class="cap">Titles since 2000–01: ${CHC.map(([n,c])=>`${esc(n)} ${c}`).join(" · ")}.</p></section>
+  <section><h2>Awards 2000–01 to 2007–08</h2><p class="prose">Season awards before our play-by-play data begins. They are listed without ratings; a name links to the player page if the player also played from 2008–09 on.</p><div class="grid2">
+   ${d3.groups(EA,d=>d.s).reverse().map(([y,ds])=>`<div class="card"><h3>${season(y)}</h3>${["MVP","F4MVP","DEF","RS","TOP","ALL1","ALL2"].filter(a=>ds.some(d=>d.a===a)).map(a=>`<p class="cap" style="margin:3px 0"><b>${AWL[a][0]}:</b> ${ds.filter(d=>d.a===a).map(d=>(d.k?nm(d.k):esc(d.n))+` <span class="muted">(${esc(d.c)})</span>`).join(", ")}</p>`).join("")}</div>`).join("")}
+   </div></section>
   <section><h2>Career honours</h2><p class="prose">Honours given for a whole career or decade. Players who played only before 2008–09 are not in our data, so they are listed without a link.</p><div class="grid3">
    ${[["DEC","All-Decade Teams"],["A25","25th Anniversary Team (2025)"],["LEG","EuroLeague Legends"]].map(([a,t])=>{const L=Object.entries(P).flatMap(([k,v])=>v.filter(x=>x[1]===a).map(x=>({k,y:x[0],n:BYKEY[k]?BYKEY[k].name:k}))).concat(((A.other||{})[a]||[]).map(([y,n])=>({y,n}))).sort((x,y)=>x.y-y.y||x.n.split(" ").pop().localeCompare(y.n.split(" ").pop()));
      const by=d3.groups(L,d=>d.y); return `<div class="card"><h3>${t}</h3>${by.map(([y,ds])=>`${a==="A25"?"":`<div class="kicker" style="margin-top:8px">${a==="DEC"?(y===2009?"2000–2010":"2010–2020"):y}</div>`}<p class="cap" style="margin:2px 0">${ds.map(d=>d.k?nm(d.k):esc(d.n)).join(", ")}</p>`).join("")}</div>`;}).join("")}
