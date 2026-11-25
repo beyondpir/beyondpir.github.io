@@ -89,7 +89,7 @@ table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:ta
 th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
 th:first-child,td:first-child,th.l,td.l{text-align:left}
 th{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:var(--surface);position:sticky;top:0}
-th button{all:unset;cursor:pointer}
+th button{all:unset;cursor:pointer}th.grp{text-align:center;font-weight:600;color:var(--muted);border-bottom:1px solid var(--line)}td.grp{font-weight:600;color:var(--muted);padding-top:14px}details.finals summary{cursor:pointer;color:var(--link);margin:4px 0 8px}button.more{color:var(--link);font-size:13.5px;margin-top:6px;display:inline-block;text-decoration:underline;text-underline-offset:3px}
 th[aria-sort="ascending"] button::after{content:" ↑";color:var(--accent)}
 th[aria-sort="descending"] button::after{content:" ↓";color:var(--accent)}
 td.mono{font-family:var(--mono)}
@@ -203,6 +203,21 @@ const cut=(n,k=24)=>n&&n.length>k?n.slice(0,k-1).trimEnd()+"…":n;
 const mlFor=(labels,px=6.6)=>Math.min(230,Math.round(16+px*Math.max(...labels.map(l=>String(l).length))));
 const sty=()=>({background:"transparent",color:css("--ink"),fontFamily:css("--mono"),fontSize:"12px"});
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const VIEW={};
+function twoView(el,simple,detail,cap,capS,capD){const box=document.createElement("div"),b=document.createElement("button");b.className="more";
+  const draw=()=>{const on=VIEW[el.id]===1;box.replaceChildren(on?detail():simple());b.textContent=on?"← Back to the simple view":"Show details →";if(cap)cap.innerHTML=on?capD:capS;};
+  b.addEventListener("click",()=>{VIEW[el.id]=VIEW[el.id]===1?0:1;draw();});el.replaceChildren(box,b);draw();}
+function tercPlot(el,pts,fa,fb,o){ // split by fa into thirds; show mean of fa (faded) and fb (solid, 95% range)
+  const s=[...pts].sort((p,q)=>fa(p)-fa(q)),n=s.length,cut3=[0,Math.floor(n/3),Math.floor(2*n/3),n],G=["Bottom third","Middle third","Top third"],R=[];
+  G.forEach((g,i)=>{const sl=s.slice(cut3[i],cut3[i+1]);[[o.la,fa],[o.lb,fb]].forEach(([k,f])=>{const v=sl.map(f),m=d3.mean(v),se=d3.deviation(v)/Math.sqrt(v.length);R.push({g,k,m,lo:m-1.96*se,hi:m+1.96*se,n:v.length});});});
+  const f=o.pct?(v=>(100*v).toFixed(0)+"%"):(v=>fmt(v,1)), B=R.filter(r=>r.k===o.lb);
+  return Plot.plot({width:W(el),height:300,marginBottom:30,marginTop:26,style:sty(),fx:{domain:G,label:null,padding:.18},x:{domain:[o.la,o.lb],axis:null,padding:.08},
+    y:{grid:true,label:o.ylab,insetBottom:16,insetTop:4,tickFormat:o.pct?(v=>(100*v).toFixed(0)+"%"):undefined,domain:o.dom},color:{domain:[o.la,o.lb],range:[css("--accent"),css("--accent")]},
+    marks:[Plot.ruleY([o.base||0],{stroke:css("--muted")}),Plot.barY(R,{fx:"g",x:"k",y1:o.base||0,y2:"m",fill:css("--accent"),fillOpacity:d=>d.k===o.la?.35:1}),
+      Plot.ruleX(B,{fx:"g",x:"k",y1:"lo",y2:"hi",stroke:css("--ink"),strokeWidth:1.5}),
+      Plot.text(R.filter(d=>d.m>=(o.base||0)),{fx:"g",x:"k",y:d=>d.k===o.lb?Math.max(d.m,d.hi):d.m,text:d=>f(d.m),dy:-8,fill:css("--ink"),fontSize:11}),Plot.text(R.filter(d=>d.m<(o.base||0)),{fx:"g",x:"k",y:d=>d.k===o.lb?Math.min(d.m,d.lo):d.m,text:d=>f(d.m),dy:10,fill:css("--ink"),fontSize:11}),
+      Plot.tip(R,Plot.pointer({fx:"g",x:"k",y:"m",title:d=>`${d.g}, ${d.k}: ${f(d.m)}${d.k===o.lb?` [${f(d.lo)}, ${f(d.hi)}]`:""} · ${d.n}`}))]});}
+function tercLegend(a,b){return `<div class="legend"><span><i style="background:var(--accent);opacity:.35"></i>${a}</span><span><i style="background:var(--accent)"></i>${b}</span></div>`;}
 const season=s=>`${s}–${String((s+1)%100).padStart(2,"0")}`;
 const tname=(s,t)=>(CORE.teamnames[`${s}_${t}`]||t);
 const ord=n=>{const v=n%100;return n+(v>=11&&v<=13?"th":({1:"st",2:"nd",3:"rd"}[n%10]||"th"));};
@@ -268,10 +283,22 @@ function metricsChart(el,compact){
       Plot.text(d,{y:"m",x:"hi",text:m=>m.v.toFixed(2),dx:8,textAnchor:"start",fill:css("--ink"),fontWeight:600}),
       Plot.tip(d,Plot.pointerY({y:"m",x:"v",title:m=>`${m.m}\n${m.v.toFixed(2)}  95% [${m.lo.toFixed(2)}, ${m.hi.toFixed(2)}]`}))]}));
 }
-function paceNet(el,R){if(!el)return;const narrow=W(el)<620;
-  el.replaceChildren(Plot.plot({width:W(el),height:320,marginBottom:42,style:sty(),x:{label:"possessions per game →",grid:true},y:{label:"↑ net / 100",grid:true},
-    marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.dot(R,{x:"pace",y:"net",r:4,fill:css("--accent")}),
-      Plot.text(R,{x:"pace",y:"net",text:t=>narrow?t.t:t.name.split(" ")[0],dy:-9,fontSize:10,fill:css("--muted")}),
+const SHORT={MAD:"Real Madrid",BAR:"Barcelona",OLY:"Olympiacos",PAN:"Panathinaikos",CSK:"CSKA",ULK:"Fenerbahçe",IST:"Efes",TEL:"Maccabi",MIL:"Milan",ZAL:"Žalgiris",BAS:"Baskonia",PAM:"Valencia",RED:"Zvezda",PAR:"Partizan",MCO:"Monaco",VIR:"Virtus",MUN:"Bayern",ASV:"ASVEL",PRS:"Paris",DUB:"Dubai",HTA:"Hapoel",BER:"Alba",KHI:"Khimki",UNK:"UNICS",DYR:"Zenit",DAR:"Darüşşafaka",GAL:"Galatasaray",BAM:"Bamberg",MAL:"Málaga",SIE:"Siena",CAN:"Gran Canaria",LJU:"Olimpija",CIB:"Cibona",BES:"Beşiktaş",ROM:"Roma",LIE:"Rytas",ZAG:"Zagreb",NIO:"Panionios",MAR:"Maroussi",CTU:"Cantù",SAS:"Sassari",TIV:"Lokomotiv",CED:"Cedevita",BUD:"Budućnost",AVE:"Avellino",LMG:"Limoges",LEM:"Le Mans",NAN:"Nancy",ORL:"Orléans",CHO:"Cholet",CHL:"Chalon",STR:"Strasbourg",NTR:"Nanterre",OLD:"Oldenburg",BIL:"Bilbao",JOV:"Joventut",GSS:"Zielona Góra",ZGO:"Zgorzelec",SOP:"Gdynia",KSK:"Karşıyaka",NOV:"Nizhny",KLA:"Neptūnas",NIK:"Budivelnyk",CHA:"Charleroi"};
+const shortT=t=>SHORT[t.t]||String(t.name||t.t).split(" ")[0];
+function placeLabels(R,fx,fy,fl,{w,h,ml,mr,mt,mb},cw=6.2){ // greedy non-overlapping labels; returns [{...,lx,ly,anchor}] in pixel space
+  const X=d3.scaleLinear(d3.extent(R,fx),[ml+4,w-mr-4]), Y=d3.scaleLinear(d3.extent(R,fy),[h-mb-4,mt+4]), boxes=[], out=[];
+  R.forEach(d=>boxes.push({x0:X(fx(d))-4,x1:X(fx(d))+4,y0:Y(fy(d))-4,y1:Y(fy(d))+4}));
+  const hit=b=>boxes.some(o=>b.x0<o.x1&&b.x1>o.x0&&b.y0<o.y1&&b.y1>o.y0)||b.x0<ml||b.x1>w-mr+20;
+  R.slice().sort((a,b)=>fy(b)-fy(a)).forEach(d=>{const px=X(fx(d)),py=Y(fy(d)),L=fl(d),tw=L.length*cw;
+    const C=[[0,-10,"middle"],[0,13,"middle"],[7,1,"start"],[-7,1,"end"],[0,-21,"middle"],[0,24,"middle"]];
+    for(const [dx,dy,a] of C){const x0=a==="middle"?px+dx-tw/2:a==="start"?px+dx:px+dx-tw, b={x0,x1:x0+tw,y0:py+dy-8,y1:py+dy+2};
+      if(!hit(b)){boxes.push(b);out.push({d,lx:X.invert(px+dx),ly:Y.invert(py+dy),a,L});return;}}});
+  return out;}
+function paceNet(el,R){if(!el)return;const narrow=W(el)<620, w=W(el), m={w,h:320,ml:40,mr:20,mt:20,mb:42};
+  const P=placeLabels(R,t=>t.pace,t=>t.net,t=>narrow?t.t:shortT(t),m,narrow?6.2:6.2);
+  const tx=a=>Plot.text(P.filter(p=>p.a===a),{x:"lx",y:"ly",text:"L",textAnchor:a,fontSize:10,fill:css("--muted")});
+  el.replaceChildren(Plot.plot({width:w,height:320,marginLeft:m.ml,marginRight:m.mr,marginTop:m.mt,marginBottom:42,style:sty(),x:{label:"possessions per game →",grid:true},y:{label:"↑ net / 100",grid:true},
+    marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.dot(R,{x:"pace",y:"net",r:4,fill:css("--accent")}),tx("middle"),tx("start"),tx("end"),
       Plot.tip(R,Plot.pointer({x:"pace",y:"net",title:t=>`${t.name}\npace ${t.pace.toFixed(1)} · net ${fmt(t.net)}`}))]}));}
 function winsChart(el,rows){
   const w=W(el), narrow=w<620, lab=t=>narrow?t.t:cut(t.name), gmax=Math.max(...rows.map(t=>t.gp));
@@ -472,9 +499,9 @@ async function viewBuild(){
     const sc=score(ws), r=wcorr(sc,net,pw), mean=d3.sum(sc.map((v,i)=>v*pw[i]))/d3.sum(pw), pts=R.map((p,i)=>({p,x:sc[i]-mean,y:net[i]}));
     document.getElementById("br").textContent=r.toFixed(2);
     const g=document.getElementById("c-bg"), refs=[{n:"PIR",v:ref.pir},{n:"Learned",v:ref.learned},{n:"Points only",v:ref.points}];
-    g.replaceChildren(Plot.plot({width:W(g),height:84,marginTop:8,marginBottom:30,marginRight:16,style:sty(),x:{domain:[Math.min(-0.1,r,...refs.map(d=>d.v))-0.05,1],label:"agreement →"},y:{axis:null},
-      marks:[Plot.ruleX([0],{stroke:css("--muted")}),Plot.tickX(refs,{x:"v",stroke:css("--muted"),strokeWidth:2}),Plot.text(refs,{x:"v",text:"n",dy:-16,fill:css("--muted"),fontSize:11}),
-        Plot.dot([r],{x:d=>d,r:8,fill:css("--accent")}),Plot.text([r],{x:d=>d,text:()=>"You",dy:18,fill:css("--accent"),fontWeight:700})]}));
+    g.replaceChildren(Plot.plot({width:W(g),height:96,marginTop:26,marginBottom:30,marginRight:16,style:sty(),x:{domain:[Math.min(-0.1,r,...refs.map(d=>d.v))-0.05,1],label:"agreement →"},y:{axis:null},
+      marks:[Plot.ruleX([0],{stroke:css("--muted"),strokeOpacity:.4}),Plot.tickX(refs,{x:"v",stroke:css("--muted"),strokeWidth:2}),Plot.text(refs,{x:"v",text:"n",frameAnchor:"top",dy:-16,fill:css("--muted"),fontSize:11}),
+        Plot.dot([r],{x:d=>d,r:7,fill:css("--accent"),stroke:css("--surface"),strokeWidth:2}),Plot.text([r],{x:d=>d,text:()=>"You",dx:12,textAnchor:"start",fill:css("--accent"),fontWeight:700,stroke:css("--surface"),strokeWidth:3,paintOrder:"stroke"})]}));
     const top=pts.slice().sort((a,b)=>b.x-a.x).slice(0,10);
     document.getElementById("btop").innerHTML=top.map(d=>{const t=tier(d.p);return `<tr><td><a href="#p-${d.p.k}">${esc(d.p.name)}</a></td><td class="mono">${fmt(d.x)}</td><td class="mono">${fmt(d.p.net)}</td><td class="l"><span class="tag ${t.c}">${t.t}</span></td></tr>`;}).join("");
     const s2=document.getElementById("c-bs");
@@ -558,18 +585,27 @@ async function viewDist(){
   const M={pir:["Players: PIR per game",PS,"pir"],box:["Players: learned box score per game",PS,"box"],n:["Players: possessions per game",PS,"n"],
     net:["Teams: net points per 100",TS,"net"],pace:["Teams: pace (possessions per game)",TS,"pace"],efg:["Teams: eFG%",TS,"efg"],tov:["Teams: turnover %",TS,"tov"],orb:["Teams: offensive rebound %",TS,"orb"],ftr:["Teams: free-throw rate",TS,"ftr"]};
   app.innerHTML=`<section><div class="kicker">How a number is spread out, season by season</div><h2>Distributions</h2>
-   <p class="prose">Pick a number. Each box shows how it was spread across players (or teams) in one season: the box holds the middle half, the line inside is the median, the whiskers reach the usual range and dots are the outliers. Add a player or a team to follow him across the seasons.</p>
+   <p class="prose">Pick a number. The chart shows how it was spread across players (or teams) in each season: the line is the typical value, the dark band holds the middle half, the pale band 8 in 10. Add a player or a team to follow him across the seasons.</p>
    <p class="cap">Try: <a href="#" data-try="pace|">how the game got faster (team pace)</a> · <a href="#" data-try="pir|Vassilis Spanoulis">one career against the league (Spanoulis, PIR per game)</a> · <a href="#" data-try="efg|">shooting over the years (eFG%)</a></p>
    <div class="controls"><label>Number <select id="ds-m"><optgroup label="Players">${Object.entries(M).filter(([k,v])=>v[1]===PS).map(([k,v])=>`<option value="${k}">${v[0].replace("Players: ","")}</option>`).join("")}</optgroup><optgroup label="Teams">${Object.entries(M).filter(([k,v])=>v[1]===TS).map(([k,v])=>`<option value="${k}">${v[0].replace("Teams: ","")}</option>`).join("")}</optgroup></select></label>
     <label>Follow <input id="ds-q" type="search" list="dslist" placeholder="A player or team" style="width:200px"></label><datalist id="dslist"></datalist></div>
-   <div class="card"><div id="c-ds" class="plot"></div><p class="cap" id="ds-cap"></p><p class="cap htr"><b>How to read:</b> One box per season (regular season and playoffs for players, regular season for teams). Players need 10+ games in the season. The orange line follows the player or team you picked.</p></div></section>`;
+   <div class="card"><div id="c-ds" class="plot"></div><p class="cap" id="ds-cap"></p><p class="cap htr" id="ds-htr"></p></div></section>`;
   const ms=document.getElementById("ds-m"), q=document.getElementById("ds-q");
   const fill=()=>{const D=M[ms.value][1]; document.getElementById("dslist").innerHTML=[...new Set(D.map(d=>d.name))].sort().map(n=>`<option value="${esc(n)}">`).join("");};
   function draw(){const [lab,D,f]=M[ms.value], rows=D.filter(d=>d[f]!=null&&isFinite(d[f])), el=document.getElementById("c-ds");
     const who=q.value.trim(), tr=who?rows.filter(d=>deacc(d.name)===deacc(who)).sort((a,b)=>a.s-b.s):[];
-    el.replaceChildren(Plot.plot({width:W(el),height:400,marginBottom:W(el)<620?36:64,marginRight:16,style:sty(),x:{label:null,tickFormat:s=>W(el)<620?("'"+String(s+1).slice(2)):season(s),tickRotate:W(el)<620?0:-35},y:{label:"↑ "+lab.split(": ")[1],grid:true},
-      marks:[Plot.boxY(rows,{x:"s",y:f,fill:css("--soft"),stroke:css("--muted")}),
-        ...(tr.length?[Plot.line(tr,{x:"s",y:f,stroke:css("--accent"),strokeWidth:2.5}),Plot.dot(tr,{x:"s",y:f,fill:css("--accent"),r:5}),Plot.tip(tr,Plot.pointer({x:"s",y:f,title:d=>`${d.name}\n${season(d.s)}: ${d[f].toFixed(1)}`}))]:[])]}));
+    const trM=tr.length?[Plot.line(tr,{x:"s",y:f,stroke:css("--accent"),strokeWidth:2.5}),Plot.dot(tr,{x:"s",y:f,fill:css("--accent"),r:5}),Plot.tip(tr,Plot.pointer({x:"s",y:f,title:d=>`${d.name}\n${season(d.s)}: ${d[f].toFixed(1)}`}))]:[];
+    const Q=d3.groups(rows,d=>d.s).map(([s,a])=>{const v=a.map(d=>d[f]).sort(d3.ascending);return {s,q10:d3.quantileSorted(v,.1),q25:d3.quantileSorted(v,.25),q50:d3.quantileSorted(v,.5),q75:d3.quantileSorted(v,.75),q90:d3.quantileSorted(v,.9),n:v.length};}).sort((a,b)=>a.s-b.s);
+    const who_=D===PS?"players":"teams", xo={label:null,tickFormat:s=>W(el)<620?("'"+String(s+1).slice(2)):season(s),tickRotate:W(el)<620?0:-35};
+    twoView(el,()=>Plot.plot({width:W(el),height:400,marginBottom:W(el)<620?36:64,marginRight:16,style:sty(),x:{...xo,ticks:Q.map(d=>d.s),domain:d3.extent(Q,d=>d.s)},y:{label:"↑ "+lab.split(": ")[1],grid:true},
+       marks:[Plot.areaY(Q,{x:"s",y1:"q10",y2:"q90",fill:css("--muted"),fillOpacity:.14}),Plot.areaY(Q,{x:"s",y1:"q25",y2:"q75",fill:css("--muted"),fillOpacity:.26}),
+         Plot.lineY(Q,{x:"s",y:"q50",stroke:css("--muted"),strokeWidth:2}),
+         Plot.text(Q.slice(-1),{x:"s",y:"q50",text:()=>"median",dx:4,dy:-8,textAnchor:"end",fill:css("--muted"),fontSize:10}),
+         ...trM,...(tr.length?[]:[Plot.tip(Q,Plot.pointerX({x:"s",y:"q50",title:d=>`${season(d.s)} · ${d.n} ${who_}\nmedian ${d.q50.toFixed(1)}\nmiddle half ${d.q25.toFixed(1)} to ${d.q75.toFixed(1)}\n8 in 10: ${d.q10.toFixed(1)} to ${d.q90.toFixed(1)}`}))])]}),
+     ()=>Plot.plot({width:W(el),height:400,marginBottom:W(el)<620?36:64,marginRight:16,style:sty(),x:xo,y:{label:"↑ "+lab.split(": ")[1],grid:true},
+      marks:[Plot.boxY(rows,{x:"s",y:f,fill:css("--soft"),stroke:css("--muted")}),...trM]}),document.getElementById("ds-htr"),
+     `<b>How to read:</b> One point per season (regular season and playoffs for players, regular season for teams; players need 10+ games). Grey line = the median ${D===PS?"player":"team"}; dark band = the middle half of the ${who_}; pale band = 8 in 10 (the top and bottom 10% lie outside). The orange line follows the player or team you picked.`,
+     `<b>How to read:</b> One box per season (regular season and playoffs for players, regular season for teams). Players need 10+ games in the season. The box holds the middle half, the line inside is the median, the whiskers reach the usual range and dots are the outliers. The orange line follows the player or team you picked.`);
     document.getElementById("ds-cap").textContent=`${rows.length.toLocaleString("en")} ${D===PS?"player-seasons":"team-seasons"}.`+(who&&!tr.length?` "${who}" not found for this number.`:"");}
   ms.addEventListener("input",()=>{fill();q.value="";draw();}); q.addEventListener("change",draw); fill(); draw();
   app.querySelectorAll("a[data-try]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault(); const [m,w]=a.dataset.try.split("|"); ms.value=m; fill(); q.value=w; draw();}));
@@ -597,32 +633,46 @@ function viewStart(){
 
 // ---------------- giants (25 Nov)
 async function viewGiants(){
-  const Gd=await getJ("giants.json");
+  const Gd=await getJ("giants.json"), H=await getJ("history.json");
   const res=r=>r.champ?"🏆 Champion":r.final?"Final":r.f4?"Final Four":"—";
-  app.innerHTML=`<section><div class="kicker">2008–09 to 2025–26 · titles since 2000–01</div><h2>The giants</h2>
-   <p class="prose">Which clubs have been the most successful? Titles, finals, Final Fours and playoff runs, next to regular-season record and points margin. There is no single "success score": how many Final Fours a title is worth is a matter of taste, so click a column to rank by it.</p>
-   <div class="tablewrap"><table class="sortable" id="gt"><thead><tr><th class="l" data-k="name">Team</th><th data-k="seasons">Seasons</th><th data-k="titles" title="EuroLeague titles 2008–09 to 2025–26">Titles</th><th data-k="titles_pre" title="EuroLeague titles 2000–01 to 2007–08">Titles 2000–08</th><th data-k="finals">Finals</th><th data-k="f4">Final Fours</th><th data-k="po" title="Seasons with a playoff series (from 2008–09)">Playoffs</th><th data-k="wl">W–L</th><th data-k="wp">Win %</th><th data-k="net" title="Average regular-season points margin per 100 possessions">Net / 100</th></tr></thead><tbody></tbody></table></div>
-   <p class="cap htr"><b>How to read:</b> Seasons, finals, Final Fours and playoffs count 2008–09 to 2025–26 (no Final Four in 2019–20). W–L, Win % and Net / 100 are regular season only. Click a column header to sort.</p></section>
-   <section><h2>Season by season</h2><p class="prose cap">The eight clubs with the most titles and Final Fours. Line = regular-season net per 100 possessions. Ring = Final Four. Filled dot = title.</p><div class="grid2" id="gy"></div></section>
+  app.innerHTML=`<section><div class="kicker">1958 to 2025–26</div><h2>The giants</h2>
+   <p class="prose">Which clubs have been the most successful? Titles in the two eras of the competition (run by FIBA until 2000, by Euroleague Basketball since), finals and Final Fours, then a second table with what our own data covers since 2008–09. There is no single "success score": how many Final Fours a title is worth is a matter of taste, so click a column to rank by it.</p>
+   <h3 style="margin-top:18px">All-time honours, 1958–2026</h3>
+   <div class="tablewrap"><table class="sortable" id="gt"><thead><tr><th class="l" data-k="name">Team</th><th data-k="tf" title="Titles 1957–58 to 1999–2000, run by FIBA">Titles FIBA 1958–2000</th><th data-k="te" title="Titles 2000–01 to 2025–26, run by Euroleague Basketball">Titles 2000–26</th><th data-k="all">All titles</th><th data-k="fin" title="Finals played, 1958 on">Finals</th><th data-k="f4" title="Final Fours: 1966, 1967 and every season since 1988 (none in 2001 and 2020)">Final Fours</th></tr></thead><tbody></tbody></table></div>
+   <p class="cap htr"><b>How to read:</b> The whole history of the competition. A Final Four was held only in 1966, 1967 and from 1988 (not in 2001 or 2020), so clubs strong in the 1970s, like Varese, have finals but no Final Fours. In 2000–01 the top clubs were split between two competitions: only the Euroleague title (Virtus Bologna) is counted; FIBA's SuproLeague that season was won by Maccabi Tel Aviv. Click a column header to sort; ▼ / ▲ shows the order.</p>
+   <p class="cap">Sources before 2008: EuroLeague Basketball's Final Four history and Wikipedia's list of EuroLeague finals. Club names are today's clubs: e.g. Ignis, Mobilgirgi and Emerson = Varese; Jugoplastika and POP 84 = Split; Simmenthal, Billy, Tracer and Philips = Olimpia Milano; Sinudyne and Kinder = Virtus Bologna; Banco di Roma = Virtus Roma. Rīgas ASK (1958–60) is the army club of that time, not today's ASK Riga.</p>
+   <h3 style="margin-top:22px">2008–09 to 2025–26, from our data</h3>
+   <div class="tablewrap"><table class="sortable" id="gm"><thead><tr><th class="l" data-k="name">Team</th><th data-k="seasons" title="EuroLeague seasons played, out of 18">Seasons</th><th data-k="titles">Titles</th><th data-k="finals">Finals</th><th data-k="f4">Final Fours</th><th data-k="po" title="Seasons with a playoff series">Playoffs</th><th data-k="wl">W–L</th><th data-k="wp">Win %</th><th data-k="net" title="Average regular-season points margin per 100 possessions">Net / 100</th></tr></thead><tbody></tbody></table></div>
+   <p class="cap htr"><b>How to read:</b> Only the 18 seasons in our play-by-play data (2008–09 to 2025–26; no Final Four in 2019–20). Seasons = how many of those 18 the club played in the EuroLeague. W–L, Win % and Net / 100 are regular season only. Clubs with at least 5 seasons or a title.</p></section>
+   <section><h2>Season by season, 2008–09 to 2025–26</h2><p class="prose cap">The eight clubs with the most titles and Final Fours in our data. Line = regular-season net per 100 possessions.</p><div class="legend"><span><i style="background:var(--muted);height:2px;border-radius:0"></i>Net per 100</span><span><i style="background:transparent;border:2px solid var(--accent);border-radius:50%;box-sizing:border-box"></i>Final Four</span><span><i style="background:var(--accent);border-radius:50%"></i>Title</span></div><div class="grid2" id="gy"></div></section>
    <section><h2>The strongest team seasons since 2008</h2><p class="prose cap">Ranked by regular-season points margin per 100 possessions. Seasons with only 16 regular-season games (2008–09 to 2011–12) vary more, so a few of them sit high partly by chance. Roster strength = minutes-weighted sum of the players' career on-court impact.</p>
    <div class="tablewrap"><table><thead><tr><th>#</th><th class="l">Season</th><th class="l">Team</th><th>W–L</th><th>Net / 100</th><th title="Share-weighted sum of the players' career impact">Roster strength</th><th class="l">Result</th><th class="l">Most used players (career impact)</th></tr></thead><tbody>
    ${Gd.best.map((r,i)=>`<tr><td class="mono">${i+1}</td><td class="l">${season(r.s)}</td><td class="l"><a href="#t-${r.s}-${r.t}">${esc(r.name)}</a></td><td class="mono">${r.w}–${r.gp-r.w}</td><td class="mono">${fmt(r.net)}</td><td class="mono">${fmt(r.strength)}</td><td class="l">${res(r)}</td><td class="l" style="white-space:normal">${r.top.map(([k,n,v])=>`<a href="#p-${k}">${esc(n)}</a> <span class="mono">${fmt(v)}</span>`).join(", ")}</td></tr>`).join("")}
    </tbody></table></div><p class="cap htr"><b>How to read:</b> Result = how far the team went that season. A very strong regular season often ends without the title: the Final Four is two single games.</p></section>
-   <section><h2>Luck at the Final Four</h2><p class="prose" id="f4-txt"></p><div class="grid2"><div class="card"><h3>Least expected titles</h3><div id="f4-up"></div></div><div class="card"><h3>Titles: expected and won, 2008–09 to 2025–26</h3><div id="f4-cl"></div></div></div>
+   <section><h2>Every final since 1958</h2><details class="finals"><summary>Show all ${H.finals.length} finals</summary><div class="tablewrap"><table><thead><tr><th class="l">Season</th><th class="l">Champion</th><th class="l">Runner-up</th><th class="l">Rest of the Final Four</th></tr></thead><tbody id="fl"></tbody></table></div></details>
+    <p class="cap htr"><b>How to read:</b> One row per season. Before 1988 the champion was decided by a two-game or single final, except in 1966 and 1967 (Final Four). 2019–20 was cancelled.</p></section>
+    <section><h2>Luck at the Final Four</h2><p class="prose" id="f4-txt"></p><div class="grid2"><div class="card"><h3>Least expected titles</h3><div id="f4-up"></div></div><div class="card"><h3>Titles: expected and won, 2008–09 to 2025–26</h3><div id="f4-cl"></div></div></div>
    <p class="cap htr"><b>How to read:</b> Chance = the team's estimated chance of the title just before that Final Four. Expected titles = the sum of those chances over all its Final Fours. "Luck" here only means the gap from this model, not that a champion did not deserve it.</p></section>`;
   try{const F=await getJ("f4luck.json"), t=F.test;
     document.getElementById("f4-txt").textContent=`Before each of the ${t.n_tours} Final Fours since 2008–09 we estimated every team's chance of the title from its points margin per 100 possessions that season up to the Final Four (shrunk toward average), using the same game model as the 2026–27 odds and the real bracket. The favourite of each game won only ${Math.round(100*t.fav_won)}% of the ${t.n_games} Final Four games, and the estimates did not beat simply giving each team 25% (Brier ${t.brier.toFixed(3)} vs ${t.base.toFixed(3)}; difference ${fmt(t.d,3)} [${fmt(t.lo,3)}, ${fmt(t.hi,3)}], test fixed in advance). By this measure the Final Four is close to a coin toss between four strong teams; 17 tournaments are too few to say more.`;
     const up=F.rows.filter(r=>r.champ).sort((a,b)=>a.p-b.p).slice(0,8);
     document.getElementById("f4-up").innerHTML=`<table><thead><tr><th class="l">Season</th><th class="l">Champion</th><th>Chance</th></tr></thead><tbody>${up.map(r=>`<tr><td class="l">${season(r.s)}</td><td class="l"><a href="#t-${r.s}-${r.t}">${esc(r.name)}</a></td><td class="mono">${Math.round(100*r.p)}%</td></tr>`).join("")}</tbody></table>`;
     document.getElementById("f4-cl").innerHTML=`<table><thead><tr><th class="l">Club</th><th>Final Fours</th><th>Expected</th><th>Won</th></tr></thead><tbody>${F.clubs.filter(c=>c.f4>=2||c.act>0).map(c=>`<tr><td class="l">${esc(c.name)}</td><td class="mono">${c.f4}</td><td class="mono">${c.exp.toFixed(1)}</td><td class="mono">${c.act}</td></tr>`).join("")}</tbody></table>`;}catch(e){}
-  const rows=Gd.teams.filter(r=>r.seasons>=5||r.titles_pre>0).map(r=>({...r,wl:r.w,wp:r.gp?r.w/r.gp:null}));
-  let key="titles",dir=-1;
-  const tb=document.querySelector("#gt tbody");
-  function draw(){const R=rows.slice().sort((a,b)=>{const x=a[key],y=b[key]; if(key==="name") return dir*String(x).localeCompare(String(y)); if(x==null) return 1; if(y==null) return -1; return dir*(x-y)||((b.titles+b.titles_pre)-(a.titles+a.titles_pre))||(b.f4-a.f4);});
-    tb.innerHTML=R.map(r=>`<tr><td class="l">${esc(r.name)}</td><td class="mono">${r.seasons}</td><td class="mono">${r.titles}</td><td class="mono">${r.titles_pre}</td><td class="mono">${r.finals}</td><td class="mono">${r.f4}</td><td class="mono">${r.po}</td><td class="mono">${r.gp?r.w+"–"+(r.gp-r.w):"—"}</td><td class="mono">${r.wp!=null?Math.round(100*r.wp)+"%":"—"}</td><td class="mono">${r.gp?fmt(r.net):"—"}</td></tr>`).join("");
-    document.querySelectorAll("#gt th").forEach(th=>th.classList.toggle("on",th.dataset.k===key));}
-  document.querySelectorAll("#gt th").forEach(th=>{th.style.cursor="pointer";th.addEventListener("click",()=>{const k=th.dataset.k; if(k===key) dir=-dir; else {key=k; dir=k==="name"?1:-1;} draw();});});
-  draw();
+  const z=v=>v?v:`<span class="cap">0</span>`;
+  function sortable(id,rows,key,cols,tie){let dir=-1;const tb=document.querySelector(`#${id} tbody`);
+    const draw=()=>{const R=rows.slice().sort((a,b)=>{const x=a[key],y=b[key]; if(key==="name") return dir*String(x).localeCompare(String(y)); if(x==null) return 1; if(y==null) return -1; return dir*(x-y)||tie(a,b);});
+      tb.innerHTML=R.map(r=>`<tr><td class="l">${esc(r.name)}</td>${cols(r)}</tr>`).join("");
+      document.querySelectorAll(`#${id} th[data-k]`).forEach(th=>{const on=th.dataset.k===key;th.classList.toggle("on",on);th.querySelector(".ar")?.remove();if(on)th.insertAdjacentHTML("beforeend",`<span class="ar"> ${dir<0?"▼":"▲"}</span>`);});};
+    document.querySelectorAll(`#${id} th[data-k]`).forEach(th=>{th.style.cursor="pointer";th.addEventListener("click",()=>{const k=th.dataset.k; if(k===key) dir=-dir; else {key=k; dir=k==="name"?1:-1;} draw();});});
+    draw();}
+  sortable("gt",H.clubs.filter(r=>r.fin>0||r.f4>0),"all",r=>`<td class="mono">${z(r.tf)}</td><td class="mono">${z(r.te)}</td><td class="mono"><b>${z(r.all)}</b></td><td class="mono">${z(r.fin)}</td><td class="mono">${z(r.f4)}</td>`,(a,b)=>(b.all-a.all)||(b.fin-a.fin)||(b.f4-a.f4));
+  sortable("gm",Gd.teams.filter(r=>r.seasons>=5||r.titles>0).map(r=>({...r,name:H.names[r.t]||fixName(r.name),wl:r.w,wp:r.gp?r.w/r.gp:null})),"titles",
+    r=>`<td class="mono">${r.seasons}</td><td class="mono"><b>${z(r.titles)}</b></td><td class="mono">${z(r.finals)}</td><td class="mono">${z(r.f4)}</td><td class="mono">${z(r.po)}</td><td class="mono">${r.w}–${r.gp-r.w}</td><td class="mono">${Math.round(100*r.wp)}%</td><td class="mono">${fmt(r.net)}</td>`,(a,b)=>(b.titles-a.titles)||(b.finals-a.finals)||(b.f4-a.f4)||(b.net-a.net));
+  const HN=t=>H.names[t]||t, sea=y=>y===1957?"1958":season(y);
+  document.getElementById("fl").innerHTML=(()=>{let o="",era=null;H.finals.slice().reverse().forEach(f=>{const e=f.s>=2000?"Euroleague Basketball, 2000–01 on":"FIBA, 1958 to 1999–2000";if(e!==era){era=e;o+=`<tr><td class="l grp" colspan="4">${e}</td></tr>`;}
+     if(f.s===2018)o+=`<tr><td class="l">2019–20</td><td class="l cap" colspan="3">Cancelled (COVID-19)</td></tr>`;
+     const rest=f.f4?f.f4.filter(t=>t!==f.c&&t!==f.r).map(HN).join(", "):(f.s===2000?`<span class="cap">no Final Four (best-of-five final). SuproLeague: Maccabi Tel Aviv</span>`:"—");
+     o+=`<tr><td class="l">${sea(f.s)}</td><td class="l"><b>${esc(HN(f.c))}</b></td><td class="l">${esc(HN(f.r))}</td><td class="l" style="white-space:normal">${rest}</td></tr>`;});return o;})();
   const box=document.getElementById("gy");
   Gd.big.forEach(t=>{const d=Gd.years.filter(y=>y.t===t).sort((a,b)=>a.s-b.s); const c=document.createElement("div"); c.className="card"; c.innerHTML=`<h3>${esc(Gd.names[t]||t)}</h3><div class="plot"></div>`; box.appendChild(c);
     const el=c.querySelector(".plot");
@@ -861,11 +911,11 @@ async function viewCompare(keys){
   app.querySelectorAll("button[data-rm]").forEach(b=>b.addEventListener("click",()=>go(keys.filter(k=>k!==b.dataset.rm))));
   const el=document.getElementById("c-vs");
   if(el){const pts=keys.slice(0,4).flatMap((k,j)=>((DET[k]||{}).arc||[]).map(([s,v,sd,n])=>({s,v,lo:v-1.645*sd,hi:v+1.645*sd,who:BYKEY[k].name,j})));
-    const col=j=>COL[j];
+    const col=j=>COL[j], nk=Math.min(4,keys.length); pts.forEach(d=>d.xs=d.s+(d.j-(nk-1)/2)*0.16);
     el.replaceChildren(pts.length?Plot.plot({width:W(el),height:260,marginBottom:40,marginRight:28,style:sty(),x:{label:"season →",tickFormat:x=>season(x)},y:{grid:true,label:"↑ per 100 vs average"},
-      marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.ruleX(pts,{x:"s",y1:"lo",y2:"hi",stroke:d=>col(d.j),strokeWidth:5,strokeOpacity:.25}),
-        Plot.lineY(pts,{x:"s",y:"v",z:"j",stroke:d=>col(d.j),strokeOpacity:.6}),Plot.dot(pts,{x:"s",y:"v",fill:d=>col(d.j),r:4}),
-        Plot.tip(pts,Plot.pointerX({x:"s",y:"v",title:d=>`${d.who}\n${season(d.s)}: ${fmt(d.v,2)}`}))]}):document.createTextNode("No season with 200+ possessions."));}
+      marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.ruleX(pts,{x:"xs",y1:"lo",y2:"hi",stroke:d=>col(d.j),strokeWidth:4,strokeOpacity:.3}),
+        Plot.lineY(pts,{x:"xs",y:"v",z:"j",stroke:d=>col(d.j),strokeOpacity:.6}),Plot.dot(pts,{x:"xs",y:"v",fill:d=>col(d.j),r:4}),
+        Plot.tip(pts,Plot.pointerX({x:"xs",y:"v",title:d=>`${d.who}\n${season(d.s)}: ${fmt(d.v,2)}`}))]}):document.createTextNode("No season with 200+ possessions."));}
 }
 
 function viewTried(){
@@ -974,7 +1024,7 @@ async function viewLeague(){
     <p class="prose cap"><b>Timeouts.</b> After an opponent run of 8 or more, the team that suffered it outscores the other over the next ~10 possessions whether its coach calls a timeout or not (about +4 per 100 without, +3 with): runs end anyway. Adjusted for score, clock, run size and lineups, the timeout's effect was −1.4 [−5.9, +2.4] points per 100 (test fixed in advance): no evidence that it helps, and a large benefit is unlikely. TV timeouts fell in those moments too rarely (115 times) to compare.</p>
     <p class="prose cap" id="cb-txt"></p></div></section>
    <section><h2>Regular season and playoffs</h2><div class="card"><div class="legend"><span><i style="background:var(--accent)"></i>Regular season</span><span><i style="background:var(--box)"></i>Playoffs, play-in and Final Four</span></div><div id="c-po" class="plot"></div><p class="cap htr"><b>How to read:</b> Each dot = league-wide possessions per team per game in one season (overtime included). Playoff games are few (about 20 a season), so their line is noisier.</p></div></section>
-   <section><h2>Can a lineup's raw result be trusted?</h2><div class="grid2"><div class="card"><div id="c-lu" class="plot"></div><p class="cap htr"><b>How to read:</b> Each dot = one five-man unit (2018–19 to 2025–26) with at least 25 possessions on offense and 25 on defense in each half of the regular season. Horizontal: its net per 100 in the first half. Vertical: the same in the second half. If raw lineup numbers were reliable, the dots would follow a rising line.</p></div>
+   <section><h2>Can a lineup's raw result be trusted?</h2><div class="grid2"><div class="card"><div id="c-lu" class="plot"></div><p class="cap htr" id="h-lu"></p></div>
     <div class="card" id="lu-st"></div></div></section>`;
   try{const RU=await getJ("runs.json"); const pts=Object.entries(RU.seasons).map(([k,v])=>({s:+k,v:v.per_game}));
     const el=document.getElementById("c-runs"); el.replaceChildren(Plot.plot({width:W(el),height:200,marginBottom:30,style:sty(),x:{tickFormat:x=>season(x),ticks:[2008,2012,2016,2020,2024],label:null},y:{label:"↑ 10-0 runs per game",grid:true,domain:[0,1.3]},
@@ -985,9 +1035,11 @@ async function viewLeague(){
   const box=document.getElementById("lg");
   panels.forEach(([k,lab])=>{const c=document.createElement("div");c.className="card";c.innerHTML=`<h3>${lab}</h3><div class="plot"></div>`;box.appendChild(c);
     const el=c.querySelector(".plot");
-    el.replaceChildren(Plot.plot({width:W(el),height:190,marginBottom:30,marginRight:28,style:sty(),x:{tickFormat:x=>season(x),ticks:[2008,2012,2016,2020,2024],label:null},y:{grid:true,label:null,zero:false},
+    el.replaceChildren(Plot.plot({width:W(el),height:190,marginBottom:30,marginRight:28,style:sty(),x:{tickFormat:x=>season(x),ticks:[2008,2012,2016,2020,2024],label:null},y:{grid:true,label:null,zero:false,insetTop:16},
       marks:[Plot.lineY(L,{x:"s",y:k,stroke:css("--accent"),strokeWidth:2}),Plot.dot(L,{x:"s",y:k,fill:css("--accent"),r:3}),
-        Plot.tip(L,Plot.pointerX({x:"s",y:k,title:d=>`${season(d.s)}: ${d[k]}`}))]}));});
+        Plot.text([L[0]],{x:"s",y:k,text:d=>(+d[k]).toFixed(1),dy:-11,textAnchor:"start",fill:css("--ink"),fontSize:11,fontWeight:600,stroke:css("--surface"),strokeWidth:3,paintOrder:"stroke"}),Plot.text([L[L.length-1]],{x:"s",y:k,text:d=>(+d[k]).toFixed(1),dy:-11,textAnchor:"end",fill:css("--ink"),fontSize:11,fontWeight:600,stroke:css("--surface"),strokeWidth:3,paintOrder:"stroke"}),
+        Plot.tip(L,Plot.pointerX({x:"s",y:k,title:d=>`${season(d.s)}: ${d[k]}`}))]}));
+    c.insertAdjacentHTML("beforeend",`<p class="cap">${season(L[0].s)}: <b>${(+L[0][k]).toFixed(1)}</b> → ${season(L[L.length-1].s)}: <b>${(+L[L.length-1][k]).toFixed(1)}</b>. The axis does not start at zero, so small changes look big.</p>`);});
   const el=document.getElementById("c-home");
   el.replaceChildren(Plot.plot({width:W(el),height:260,marginBottom:40,marginRight:28,style:sty(),x:{tickFormat:x=>season(x),ticks:L.map(d=>d.s).filter((_,i)=>i%2===0),label:null},y:{grid:true,label:"↑ points per game for the home team"},
     marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.ruleX(L,{x:"s",y1:"home_lo",y2:"home_hi",stroke:d=>d.s===2020?css("--box"):css("--accent"),strokeWidth:6,strokeOpacity:.35}),
@@ -1000,9 +1052,13 @@ async function viewLeague(){
     marks:[Plot.lineY(pp,{x:"s",y:"v",z:"k",stroke:d=>colr(d.k),strokeWidth:2}),Plot.dot(pp,{x:"s",y:"v",fill:d=>colr(d.k),r:3.5}),
       Plot.tip(pp,Plot.pointer({x:"s",y:"v",title:d=>`${season(d.s)} ${d.k==="rs"?"regular season":"playoffs"}: ${d.v.toFixed(1)} · ${d.g} games`}))]}));
   const T=E.lu_test, el3=document.getElementById("c-lu"), pts=T.pts.map(([a,b,c,n])=>({a,b,c,n}));
-  el3.replaceChildren(Plot.plot({width:W(el3),height:300,marginBottom:42,style:sty(),x:{label:"first half, net / 100 →",grid:true},y:{label:"↑ second half",grid:true},
+  const L3=tercLegend("Lineup net, first half","Same lineups, second half");
+  twoView(el3,()=>{const d=document.createElement("div");d.innerHTML=L3;d.append(tercPlot(el3,pts,p=>p.a,p=>p.b,{la:"Lineup net, first half",lb:"Same lineups, second half",ylab:"↑ net per 100"}));return d;},
+   ()=>Plot.plot({width:W(el3),height:300,marginBottom:42,style:sty(),x:{label:"first half, net / 100 →",grid:true},y:{label:"↑ second half",grid:true},
     marks:[Plot.ruleY([0],{stroke:css("--muted")}),Plot.ruleX([0],{stroke:css("--muted")}),Plot.dot(pts,{x:"a",y:"b",r:2.8,fill:css("--accent"),fillOpacity:.5}),
-      Plot.linearRegressionY(pts,{x:"a",y:"b",stroke:css("--box"),ci:0})]}));
+      Plot.linearRegressionY(pts,{x:"a",y:"b",stroke:css("--box"),ci:0})]}),document.getElementById("h-lu"),
+   `<b>How to read:</b> Five-man units (2018–19 to 2025–26, at least 25 possessions on offense and 25 on defense in each half of the regular season) are split into three equal groups by their net per 100 in the first half. Faded bar = the group's first-half net; solid bar = the same lineups in the second half, with its 95% range. Most of the gap between the groups disappears: raw lineup numbers over a few hundred possessions are mostly noise.`,
+   `<b>How to read:</b> Each dot = one five-man unit (2018–19 to 2025–26) with at least 25 possessions on offense and 25 on defense in each half of the regular season. Horizontal: its net per 100 in the first half. Vertical: the same in the second half. If raw lineup numbers were reliable, the dots would follow a rising line.`);
   document.getElementById("lu-st").innerHTML=`<div class="stat"><b>${fmt(T.r_half,2)}</b><span>correlation between a lineup's first-half and second-half net (${T.n} lineups). 95% interval [${T.r_half_ci[0].toFixed(2)}, ${T.r_half_ci[1].toFixed(2)}].</span></div>
     <div class="stat" style="margin-top:14px"><b>${fmt(T.r_pre,2)}</b><span>correlation between the second-half net and the sum of the five players' on-court impact from earlier seasons only [${T.r_pre_ci[0].toFixed(2)}, ${T.r_pre_ci[1].toFixed(2)}].</span></div>
     <p class="prose cap" style="margin-top:14px">Neither predicts a lineup's second half well: a few hundred possessions are too few, because one possession is worth 0, 1, 2 or 3 points almost at random. The two are not clearly different (difference ${fmt(T.r_pre-T.r_half,2)}, interval [${T.diff_ci[0].toFixed(2)}, ${T.diff_ci[1].toFixed(2)}]). This is why the team pages show a "best estimate" that pulls raw lineup numbers toward what the players' ratings expect.</p>`;
@@ -1013,19 +1069,26 @@ async function viewClutch(){
   app.innerHTML=`<section><div class="kicker">A test, written down before it was run</div><h2>Is “clutch” a skill?</h2>
    <p class="prose">Clutch here means the last three minutes of the fourth quarter or overtime with the score within five points: about 3.6% of all possessions. If some players reliably raise (or lower) their game in those moments, a player who did better in the clutch than in the rest of the game this season should do so again next season.</p>
    <div class="grid2">
-    <div class="card"><h3>Players: does it carry over?</h3><div id="c-c1" class="plot"></div><p class="cap">Each dot is one player in two consecutive seasons (${c1.pairs} pairs, ${c1.players} players with 60+ clutch possessions in both). Axes: on-court net in the clutch minus the rest of the game, points per 100 possessions.</p><p class="cap htr"><b>How to read:</b> Each dot = one player in two consecutive seasons. Horizontal: how much better (or worse) his team did with him in close late minutes than in other minutes this season. Vertical: the same, next season. If clutch were a skill, the dots would follow a rising line.</p></div>
-    <div class="card"><h3>Teams: close games, first half vs second half</h3><div id="c-c2" class="plot"></div><p class="cap">Win share in games decided by 5 points or fewer, first vs second half of the same season (${c2.n} team-seasons).</p><p class="cap htr"><b>How to read:</b> Each dot = one or more team-seasons: share of close games won in the first half (horizontal) and second half (vertical) of the season. Larger dot = more team-seasons at that spot. The shares look "round" (1/2, 1/3, 3/4…) because each half has only a handful of close games.</p></div></div>
+    <div class="card"><h3>Players: does it carry over?</h3><div id="c-c1" class="plot"></div><p class="cap">${c1.pairs} pairs of consecutive seasons, ${c1.players} players with 60+ clutch possessions in both. Clutch edge = on-court net in the clutch minus the rest of the game, points per 100 possessions.</p><p class="cap htr" id="h-c1"></p></div>
+    <div class="card"><h3>Teams: close games, first half vs second half</h3><div id="c-c2" class="plot"></div><p class="cap">Win share in games decided by 5 points or fewer, first vs second half of the same season (${c2.n} team-seasons).</p><p class="cap htr" id="h-c2"></p></div></div>
    <div class="grid2">
     <div class="card stat"><b>${fmt(c1.r,2)}</b><span>year-to-year correlation of players' clutch edge. 95% interval [${c1.ci[0].toFixed(2)}, ${c1.ci[1].toFixed(2)}]. For comparison, their non-clutch impact repeats at ${c1.ref_r.toFixed(2)}.</span></div>
     <div class="card stat"><b>${fmt(c2.r,2)}</b><span>correlation of teams' close-game record between the two halves of a season [${c2.ci[0].toFixed(2)}, ${c2.ci[1].toFixed(2)}]. Their overall point margin repeats at ${c2.ref_r.toFixed(2)}.</span></div></div>
    <p class="prose"><b>Verdict:</b> no sign that clutch performance is a repeatable skill, for players or teams. The test is not very sensitive, though: a player has only about 95 clutch possessions in a season, so a correlation of at most ${c1.ci[1].toFixed(2)} rules out only a large clutch skill (players differing by more than about 7 points per 100 clutch possessions). A smaller clutch skill would go unnoticed.</p></section>`;
   const sc=(el,pts,lab,dom)=>el.replaceChildren(Plot.plot({width:W(el),height:300,marginBottom:42,style:sty(),x:{domain:dom,label:lab[0],grid:true},y:{domain:dom,label:lab[1],grid:true},
     marks:[Plot.dot(pts,{x:"0",y:"1",r:2.5,fill:css("--accent"),fillOpacity:.45}),Plot.linearRegressionY(pts,{x:"0",y:"1",stroke:css("--box"),ci:0})]}));
-  sc(document.getElementById("c-c1"),c1.pts,["this season →","↑ next season"],[-80,80]);
+  {const e1=document.getElementById("c-c1"),L1=tercLegend("Clutch edge this season","Same players, next season");
+   twoView(e1,()=>{const d=document.createElement("div");d.innerHTML=L1;d.append(tercPlot(e1,c1.pts,p=>p[0],p=>p[1],{la:"Clutch edge this season",lb:"Same players, next season",ylab:"↑ clutch edge, per 100"}));return d;},
+     ()=>{const d=document.createElement("div");sc({replaceChildren:x=>d.replaceChildren(x),clientWidth:e1.clientWidth},c1.pts,["this season →","↑ next season"],[-80,80]);return d;},document.getElementById("h-c1"),
+     `<b>How to read:</b> Players are split into three equal groups by their clutch edge this season. Faded bar = the group's average this season; solid bar = the same players next season, with its 95% range. If clutch were a skill, the top group would stay clearly above the bottom group next season. It does not: all three land near zero.`,
+     `<b>How to read:</b> Each dot = one player in two consecutive seasons. Horizontal: how much better (or worse) his team did with him in close late minutes than in other minutes this season. Vertical: the same, next season. If clutch were a skill, the dots would follow a rising line.`);}
   {const el2=document.getElementById("c-c2"), G={}; c2.pts.forEach(([a,b])=>{const k=a.toFixed(3)+"|"+b.toFixed(3); G[k]=G[k]||{x:a,y:b,n:0}; G[k].n++;}); const pts2=Object.values(G);
-   el2.replaceChildren(Plot.plot({width:W(el2),height:300,marginBottom:42,style:sty(),x:{domain:[0,1],label:"first half →",grid:true},y:{domain:[0,1],label:"↑ second half",grid:true},r:{range:[3,13]},
+   const L2=tercLegend("Close-game wins, first half","Same teams, second half");
+   twoView(el2,()=>{const d=document.createElement("div");d.innerHTML=L2;d.append(tercPlot(el2,c2.pts,p=>p[0],p=>p[1],{la:"Close-game wins, first half",lb:"Same teams, second half",ylab:"↑ share of close games won",pct:true,dom:[0,1]}));return d;},()=>Plot.plot({width:W(el2),height:300,marginBottom:42,style:sty(),x:{domain:[0,1],label:"first half →",grid:true},y:{domain:[0,1],label:"↑ second half",grid:true},r:{range:[3,13]},
     marks:[Plot.dot(pts2,{x:"x",y:"y",r:"n",fill:css("--accent"),fillOpacity:.5}),Plot.linearRegressionY(c2.pts,{x:"0",y:"1",stroke:css("--box"),ci:0}),
-      Plot.tip(pts2,Plot.pointer({x:"x",y:"y",title:d=>`first half ${(100*d.x).toFixed(0)}% · second half ${(100*d.y).toFixed(0)}%\n${d.n} team-season${d.n>1?"s":""}`}))]}));}
+      Plot.tip(pts2,Plot.pointer({x:"x",y:"y",title:d=>`first half ${(100*d.x).toFixed(0)}% · second half ${(100*d.y).toFixed(0)}%\n${d.n} team-season${d.n>1?"s":""}`}))]}),document.getElementById("h-c2"),
+     `<b>How to read:</b> Teams are split into three equal groups by their share of close games won in the first half of the season. Faded bar = the group's share then; solid bar = the same teams in the second half, with its 95% range. If winning close games were a team skill, the top group would stay on top. All three end up near 50%.`,
+     `<b>How to read:</b> Each dot = one or more team-seasons: share of close games won in the first half (horizontal) and second half (vertical) of the season. Larger dot = more team-seasons at that spot. The shares look "round" (1/2, 1/3, 3/4…) because each half has only a handful of close games.`);}
 }
 
 async function viewSeason(){
@@ -1062,7 +1125,7 @@ async function oddsSection(box,rows){
    <p class="prose">The rest of the regular season is played out ${N.toLocaleString("en")} times. Each game's expected margin comes from the players each team has been using this season (their share of minutes so far) and those players' on-court impact frozen before the season, plus home court. Results already played are kept as they are. Top 6 go straight to the playoffs, 7–10 to the play-in. Ties are broken by head-to-head wins, then head-to-head margin, then overall margin.</p>
    <div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>W–L</th><th>Top 6</th><th>7–10 (play-in)</th><th>11th or lower</th><th>1st</th><th>Average finish</th><th title="Change in the top-6 chance since the previous weekly update">Change since last week</th></tr></thead><tbody>
    ${T.map(t=>`<tr><td><a href="#t26-${t.t}">${esc(t.name)}</a></td><td class="mono">${t.w}–${t.g-t.w}</td><td class="mono"><b>${pc(t.top6)}</b></td><td class="mono">${pc(t.pin)}</td><td class="mono">${pc(t.out)}</td><td class="mono">${pc(t.first)}</td><td class="mono">${t.ep.toFixed(1)}</td><td class="mono">${t.d6==null?"—":Math.round(100*t.d6)===0?"=":`<span style="color:${t.d6>0?"var(--up,#1f9d55)":"var(--down)"}">${t.d6>0?"▲":"▼"} ${Math.abs(Math.round(100*t.d6))}</span>`}</td></tr>`).join("")}</tbody></table></div><p class="cap htr"><b>How to read:</b> Each row = one team, sorted by average finishing position. Percentages = share of simulated seasons in which that happened. The last column shows how the top-6 chance moved since the previous weekly update, in percentage points (it fills in from the second update).</p>
-   <div class="card" style="margin-top:14px"><h3>Every finishing position</h3><div id="c-hm" class="plot"></div><p class="cap htr"><b>How to read:</b> Rows = teams, columns = final position 1–20. Darker = more likely. A short dark band = the outcome is fairly settled; a long pale band = still wide open.</p></div>
+   <div class="card" style="margin-top:14px"><h3>Where each team is likely to finish</h3><div id="c-hm" class="plot"></div><p class="cap htr" id="h-hm"></p></div>
    <div class="card" style="margin-top:14px"><h3>How the top-6 chances moved</h3><div id="c-hi" class="plot"></div></div>
    <p class="prose cap" style="margin-top:14px"><b>Limits.</b> Injuries and signings count only once a player has actually played or stopped playing; nothing is known about the future. Player ratings are frozen and are not updated with this season's games. Game-to-game spread (±${B.sig.toFixed(1)} points) and the uncertainty in each team's strength (±${B.tau.toFixed(1)}) were measured on 2018–19 to 2025–26.</p>
 
@@ -1075,11 +1138,26 @@ async function oddsSection(box,rows){
    <div class="controls" style="margin-top:14px"><label>Season <select id="od-s">${Object.keys(B.seasons).sort((a,b)=>b-a).map(y=>`<option value="${y}">${season(+y)}</option>`).join("")}</select></label></div>
    <div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>Wins after round 13</th><th id="od-h">Playoff chance after round 13</th><th>Final position</th><th class="l">Made it?</th></tr></thead><tbody id="od-b"></tbody></table></div><p class="cap htr"><b>How to read:</b> For a past season: the chance each team was given after round 13, next to where it actually finished. Playoffs = top 8 up to 2022–23, top 6 (direct) since 2023–24.</p>`;
   const hm=document.getElementById("c-hm"), cells=T.flatMap(t=>t.p.map((v,i)=>({team:t.name,pos:i+1,v})));
-  hm.replaceChildren(Plot.plot({width:W(hm),height:T.length*24+60,marginLeft:W(hm)<620?52:mlFor(T.map(t=>cut(t.name)),7),marginRight:12,marginBottom:40,style:sty(),
-    x:{label:"final position →",ticks:[1,6,10,15,20],domain:d3.range(1,21)},y:{domain:T.map(t=>t.name),label:null,tickFormat:n=>W(hm)<620?(T.find(t=>t.name===n)||{}).t:cut(n)},
+  const qf=(p,q)=>{let c=0;for(let i=0;i<p.length;i++){c+=p[i];if(c>=q-1e-9)return i+1;}return p.length;};
+  const RG=T.map(t=>({team:t.name,q10:qf(t.p,.1),q25:qf(t.p,.25),q50:qf(t.p,.5),q75:qf(t.p,.75),q90:qf(t.p,.9),top6:t.top6}));
+  const NP=T[0].p.length, yax={domain:T.map(t=>t.name),label:null,tickFormat:n=>W(hm)<620?(T.find(t=>t.name===n)||{}).t:cut(n)}, mlh=W(hm)<620?52:mlFor(T.map(t=>cut(t.name)),7);
+  const zones=[{a:.5,b:6.5,l:"Playoffs"},{a:6.5,b:10.5,l:"Play-in"},{a:10.5,b:NP+.5,l:"Out"}];
+  twoView(hm,()=>Plot.plot({width:W(hm),height:T.length*24+70,marginTop:30,marginLeft:mlh,marginRight:12,marginBottom:40,style:sty(),
+    x:{label:"final position →",ticks:[1,6,10,15,20].filter(v=>v<=NP),domain:[.5,NP+.5]},y:yax,
+    marks:[Plot.rectX(zones,{x1:"a",x2:"b",fill:(d,i)=>i===0?css("--accent"):css("--muted"),fillOpacity:(d,i)=>i===1?.06:i===0?.07:0}),
+      Plot.text(zones,{x:d=>(d.a+d.b)/2,text:"l",frameAnchor:"top",dy:-20,fill:css("--muted"),fontSize:11}),
+      Plot.ruleX([6.5,10.5],{stroke:css("--muted"),strokeDasharray:"3,3"}),
+      Plot.ruleY(RG,{y:"team",x1:d=>d.q10-.4,x2:d=>d.q90+.4,stroke:css("--accent"),strokeOpacity:.3,strokeWidth:9}),
+      Plot.ruleY(RG,{y:"team",x1:d=>d.q25-.4,x2:d=>d.q75+.4,stroke:css("--accent"),strokeOpacity:.55,strokeWidth:9}),
+      Plot.dot(RG,{y:"team",x:"q50",r:5,fill:css("--accent"),stroke:css("--surface"),strokeWidth:1.5}),
+      Plot.tip(RG,Plot.pointer({y:"team",x:"q50",title:d=>`${d.team}\nmost likely around ${d.q50}${d.q50===1?"st":d.q50===2?"nd":d.q50===3?"rd":"th"}\n8 in 10 seasons between ${d.q10} and ${d.q90}\ntop 6: ${pc(d.top6)}`}))]}),
+   ()=>Plot.plot({width:W(hm),height:T.length*24+60,marginLeft:mlh,marginRight:12,marginBottom:40,style:sty(),
+    x:{label:"final position →",ticks:[1,6,10,15,20],domain:d3.range(1,21)},y:yax,
     color:{type:"linear",domain:[0,0.5],range:[css("--soft"),css("--accent")],clamp:true},
     marks:[Plot.cell(cells,{x:"pos",y:"team",fill:"v",inset:0.5}),Plot.ruleX([6.5,10.5],{stroke:css("--ink"),strokeWidth:1.5}),
-      Plot.tip(cells,Plot.pointer({x:"pos",y:"team",title:c=>`${c.team}\nposition ${c.pos}: ${pc(c.v)}`}))]}));
+      Plot.tip(cells,Plot.pointer({x:"pos",y:"team",title:c=>`${c.team}\nposition ${c.pos}: ${pc(c.v)}`}))]}),document.getElementById("h-hm"),
+   `<b>How to read:</b> One row per team. Dot = the middle outcome of the simulated seasons. Darker bar = the middle half of them; pale bar = 8 in 10. A short bar = the finish is fairly settled; a long bar = still wide open. Shaded zones: top 6 (playoffs), 7–10 (play-in).`,
+   `<b>How to read:</b> Rows = teams, columns = final position 1–20. Darker = more likely. A short dark band = the outcome is fairly settled; a long pale band = still wide open.`);
   const hi=document.getElementById("c-hi"), H_=B.hist;
   if(H_.length<2){hi.innerHTML=`<p class="cap">This chart fills in from the next weekly update: one point per update, starting from round 13.</p>`;}
   else{const pts=H_.flatMap(h=>Object.entries(h.p).map(([t,v])=>({r:h.rmax,t,name:nm[t]||t,v:v[0]})));
