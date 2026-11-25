@@ -156,7 +156,7 @@ nav.top details.more{background:none;border:0;padding:0;margin:0;max-width:none}
     <details class="more" data-g="data"><summary>Data ▾</summary><div class="menu">
     <a class="l" data-r="teams" href="#teams">Teams</a>
     <a class="l" data-r="league" href="#league">League</a>
-    <a class="l" data-r="giants" href="#giants">The giants</a>
+    <a class="l" data-r="giants" href="#giants">Champions and contenders</a>
     <a class="l" data-r="awards" href="#awards">Awards vs ratings</a>
     </div></details>
     <details class="more" data-g="play"><summary>Play ▾</summary><div class="menu">
@@ -179,7 +179,7 @@ nav.top details.more{background:none;border:0;padding:0;margin:0;max-width:none}
   </div>
 </nav>
 <div class="tabbar" aria-label="Sections"><a href="#home" data-t="home">Home</a><a href="#players" data-t="players">Players</a><a href="#vs" data-t="vs">Compare</a><a href="#season" data-t="season">2026–27</a><button id="tbm" aria-expanded="false">More</button></div>
-<div class="sheet-bd" id="sheetbd"></div><div class="sheet" id="sheet"><input id="sheetq" type="search" placeholder="Find a player" aria-label="Find a player" list="plist"><div class="sh-h">Data</div><a href="#players">Players</a><a href="#vs">Compare</a><a href="#season">2026–27</a><a href="#teams">Teams</a><a href="#league">League</a><a href="#giants">The giants</a><a href="#awards">Awards vs ratings</a><div class="sh-h">Play</div><a href="#explore">Explore</a><a href="#build">Make your own PIR</a><a href="#dist">Distributions</a><a href="#clutch">Clutch?</a><div class="sh-h">Method</div><a href="#start">Start here</a><a href="#metrics">Why not PIR</a><a href="#tried">What we tried</a><a href="#how">How it works</a><a href="#glossary">Glossary</a></div>
+<div class="sheet-bd" id="sheetbd"></div><div class="sheet" id="sheet"><input id="sheetq" type="search" placeholder="Find a player" aria-label="Find a player" list="plist"><div class="sh-h">Data</div><a href="#players">Players</a><a href="#vs">Compare</a><a href="#season">2026–27</a><a href="#teams">Teams</a><a href="#league">League</a><a href="#giants">Champions and contenders</a><a href="#awards">Awards vs ratings</a><div class="sh-h">Play</div><a href="#explore">Explore</a><a href="#build">Make your own PIR</a><a href="#dist">Distributions</a><a href="#clutch">Clutch?</a><div class="sh-h">Method</div><a href="#start">Start here</a><a href="#metrics">Why not PIR</a><a href="#tried">What we tried</a><a href="#how">How it works</a><a href="#glossary">Glossary</a></div>
 <main class="wrap" id="app"><p class="kicker" style="padding:40px 0">Loading data…</p></main>
 <footer><div class="wrap">
   <p>Data: www.euroleague.net and/or www.eurocupbasketball.com. Ratings, charts and analysis are my own. Independent, non-commercial project, not affiliated with Euroleague Basketball.</p>
@@ -635,9 +635,13 @@ function viewStart(){
 async function viewGiants(){
   const Gd=await getJ("giants.json"), H=await getJ("history.json");
   const res=r=>r.champ?"🏆 Champion":r.final?"Final":r.f4?"Final Four":"—";
-  app.innerHTML=`<section><div class="kicker">1958 to 2025–26</div><h2>The giants</h2>
+  app.innerHTML=`<section><div class="kicker">Titles, finals and Final Fours since 1958</div><h2>Champions and contenders</h2>
    <p class="prose">Which clubs have been the most successful? Titles in the two eras of the competition (run by FIBA until 2000, by Euroleague Basketball since), finals and Final Fours, then a second table with what our own data covers since 2008–09. There is no single "success score": how many Final Fours a title is worth is a matter of taste, so click a column to rank by it.</p>
-   <h3 style="margin-top:18px">All-time honours, 1958–2026</h3>
+   <h3 style="margin-top:18px">Titles by club</h3>
+   <div class="legend"><span><i style="background:var(--accent);opacity:.4"></i>FIBA era, 1958 to 1999–2000</span><span><i style="background:var(--accent)"></i>Euroleague Basketball era, 2000–01 to 2025–26</span></div>
+   <div id="gtri"></div>
+   <p class="cap htr"><b>How to read:</b> One bar per club, longest first: all ${H.totals.titles} titles, split into the FIBA era (pale) and the Euroleague Basketball era (solid). In 2000–01 only the Euroleague title (Virtus Bologna) is counted. To rank by era, click a column in the table below.</p>
+   <h3 style="margin-top:22px">All-time honours, 1958–2026</h3>
    <div class="tablewrap"><table class="sortable" id="gt"><thead><tr><th class="l" data-k="name">Team</th><th data-k="tf" title="Titles 1957–58 to 1999–2000, run by FIBA">Titles FIBA 1958–2000</th><th data-k="te" title="Titles 2000–01 to 2025–26, run by Euroleague Basketball">Titles 2000–26</th><th data-k="all">All titles</th><th data-k="fin" title="Finals played, 1958 on">Finals</th><th data-k="f4" title="Final Fours: 1966, 1967 and every season since 1988 (none in 2001 and 2020)">Final Fours</th></tr></thead><tbody></tbody></table></div>
    <p class="cap htr"><b>How to read:</b> The whole history of the competition. A Final Four was held only in 1966, 1967 and from 1988 (not in 2001 or 2020), so clubs strong in the 1970s, like Varese, have finals but no Final Fours. In 2000–01 the top clubs were split between two competitions: only the Euroleague title (Virtus Bologna) is counted; FIBA's SuproLeague that season was won by Maccabi Tel Aviv. Click a column header to sort; ▼ / ▲ shows the order.</p>
    <p class="cap">Sources before 2008: EuroLeague Basketball's Final Four history and Wikipedia's list of EuroLeague finals. Club names are today's clubs: e.g. Ignis, Mobilgirgi and Emerson = Varese; Jugoplastika and POP 84 = Split; Simmenthal, Billy, Tracer and Philips = Olimpia Milano; Sinudyne and Kinder = Virtus Bologna; Banco di Roma = Virtus Roma. Rīgas ASK (1958–60) is the army club of that time, not today's ASK Riga.</p>
@@ -665,6 +669,17 @@ async function viewGiants(){
       document.querySelectorAll(`#${id} th[data-k]`).forEach(th=>{const on=th.dataset.k===key;th.classList.toggle("on",on);th.querySelector(".ar")?.remove();if(on)th.insertAdjacentHTML("beforeend",`<span class="ar"> ${dir<0?"▼":"▲"}</span>`);});};
     document.querySelectorAll(`#${id} th[data-k]`).forEach(th=>{th.style.cursor="pointer";th.addEventListener("click",()=>{const k=th.dataset.k; if(k===key) dir=-dir; else {key=k; dir=k==="name"?1:-1;} draw();});});
     draw();}
+  {const box=document.getElementById("gtri"), X=d3.max(H.clubs,r=>r.all);
+   const panel=(title,rows,stack)=>{const c=document.createElement("div");c.className="card";c.innerHTML=`<h3 style="font-size:15px">${title}</h3><div class="plot"></div>`;box.appendChild(c);const el=c.querySelector(".plot"),w=W(el);
+     const R=rows.slice().sort((a,b)=>b.v-a.v||b.all-a.all||b.fin-a.fin||a.name.localeCompare(b.name)), lab=r=>cut(r.name,w<330?16:22);
+     const parts=stack?R.flatMap(r=>[{name:r.name,lab:lab(r),e:"FIBA",x1:0,x2:r.tf,n:r.tf},{name:r.name,lab:lab(r),e:"EL",x1:r.tf,x2:r.tf+r.te,n:r.te}]).filter(p=>p.n>0):R.map(r=>({name:r.name,lab:lab(r),e:r.era,x1:0,x2:r.v,n:r.v}));
+     el.replaceChildren(Plot.plot({width:w,height:R.length*21+40,marginLeft:mlFor(R.map(lab),6.4),marginRight:24,marginTop:4,marginBottom:28,style:sty(),
+       x:{domain:[0,X],grid:true,label:null,ticks:[0,2,4,6,8,10]},y:{domain:R.map(lab),label:null,padding:.18},
+       marks:[Plot.barX(parts,{y:"lab",x1:"x1",x2:"x2",fill:css("--accent"),fillOpacity:d=>d.e==="FIBA"?.4:1,insetRight:.5}),
+         Plot.text(R,{y:lab,x:"v",text:"v",dx:6,textAnchor:"start",fill:css("--ink"),fontSize:11}),
+         Plot.tip(parts,Plot.pointerY({y:"lab",x:"x2",title:d=>`${d.name}: ${d.n} title${d.n>1?"s":""} ${d.e==="FIBA"?"1958 to 1999–2000":"2000–01 to 2025–26"}`}))]}));};
+   panel(`All titles, 1958–2026 (${H.totals.titles})`,H.clubs.filter(r=>r.all>0).map(r=>({...r,v:r.all})),true);
+}
   sortable("gt",H.clubs.filter(r=>r.fin>0||r.f4>0),"all",r=>`<td class="mono">${z(r.tf)}</td><td class="mono">${z(r.te)}</td><td class="mono"><b>${z(r.all)}</b></td><td class="mono">${z(r.fin)}</td><td class="mono">${z(r.f4)}</td>`,(a,b)=>(b.all-a.all)||(b.fin-a.fin)||(b.f4-a.f4));
   sortable("gm",Gd.teams.filter(r=>r.seasons>=5||r.titles>0).map(r=>({...r,name:H.names[r.t]||fixName(r.name),wl:r.w,wp:r.gp?r.w/r.gp:null})),"titles",
     r=>`<td class="mono">${r.seasons}</td><td class="mono"><b>${z(r.titles)}</b></td><td class="mono">${z(r.finals)}</td><td class="mono">${z(r.f4)}</td><td class="mono">${z(r.po)}</td><td class="mono">${r.w}–${r.gp-r.w}</td><td class="mono">${Math.round(100*r.wp)}%</td><td class="mono">${fmt(r.net)}</td>`,(a,b)=>(b.titles-a.titles)||(b.finals-a.finals)||(b.f4-a.f4)||(b.net-a.net));
