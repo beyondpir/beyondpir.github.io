@@ -89,7 +89,7 @@ table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:ta
 th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
 th:first-child,td:first-child,th.l,td.l{text-align:left}
 th{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:var(--surface);position:sticky;top:0}
-th button{all:unset;cursor:pointer}th.grp{text-align:center;font-weight:600;color:var(--muted);border-bottom:1px solid var(--line)}td.grp{font-weight:600;color:var(--muted);padding-top:14px}details.finals summary{cursor:pointer;color:var(--link);margin:4px 0 8px}button.more{color:var(--link);font-size:13.5px;margin-top:6px;display:inline-block;text-decoration:underline;text-underline-offset:3px}
+th button{all:unset;cursor:pointer}nav.s26tabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 4px}nav.s26tabs a{padding:6px 12px;border:1px solid var(--line);border-radius:999px;font-size:13.5px;text-decoration:none;color:var(--ink)}nav.s26tabs a[aria-current]{background:var(--ink);color:var(--surface);border-color:var(--ink)}th.grp{text-align:center;font-weight:600;color:var(--muted);border-bottom:1px solid var(--line)}td.grp{font-weight:600;color:var(--muted);padding-top:14px}details.finals summary{cursor:pointer;color:var(--link);margin:4px 0 8px}button.more{color:var(--link);font-size:13.5px;margin-top:6px;display:inline-block;text-decoration:underline;text-underline-offset:3px}
 th[aria-sort="ascending"] button::after{content:" ↑";color:var(--accent)}
 th[aria-sort="descending"] button::after{content:" ↓";color:var(--accent)}
 td.mono{font-family:var(--mono)}
@@ -152,7 +152,12 @@ nav.top details.more{background:none;border:0;padding:0;margin:0;max-width:none}
     <div class="links">
     <a class="l" data-r="players" href="#players">Players</a>
     <a class="l" data-r="vs" href="#vs">Compare</a>
-    <a class="l" data-r="season" href="#season">2026–27</a>
+    <details class="more" data-g="s26"><summary>2026–27 ▾</summary><div class="menu">
+    <a class="l" data-r="season" href="#season">Standings &amp; chances</a>
+    <a class="l" data-r="games" href="#games">Games</a>
+    <a class="l" data-r="teams26" href="#teams26">Teams</a>
+    <a class="l" data-r="locked" href="#locked">The locked test</a>
+    </div></details>
     <details class="more" data-g="data"><summary>Data ▾</summary><div class="menu">
     <a class="l" data-r="teams" href="#teams">Teams</a>
     <a class="l" data-r="league" href="#league">League</a>
@@ -179,7 +184,7 @@ nav.top details.more{background:none;border:0;padding:0;margin:0;max-width:none}
   </div>
 </nav>
 <div class="tabbar" aria-label="Sections"><a href="#home" data-t="home">Home</a><a href="#players" data-t="players">Players</a><a href="#vs" data-t="vs">Compare</a><a href="#season" data-t="season">2026–27</a><button id="tbm" aria-expanded="false">More</button></div>
-<div class="sheet-bd" id="sheetbd"></div><div class="sheet" id="sheet"><input id="sheetq" type="search" placeholder="Find a player" aria-label="Find a player" list="plist"><div class="sh-h">Data</div><a href="#players">Players</a><a href="#vs">Compare</a><a href="#season">2026–27</a><a href="#teams">Teams</a><a href="#league">League</a><a href="#giants">Champions and contenders</a><a href="#awards">Awards vs ratings</a><div class="sh-h">Play</div><a href="#explore">Explore</a><a href="#build">Make your own PIR</a><a href="#dist">Distributions</a><a href="#clutch">Clutch?</a><div class="sh-h">Method</div><a href="#start">Start here</a><a href="#metrics">Why not PIR</a><a href="#tried">What we tried</a><a href="#how">How it works</a><a href="#glossary">Glossary</a></div>
+<div class="sheet-bd" id="sheetbd"></div><div class="sheet" id="sheet"><input id="sheetq" type="search" placeholder="Find a player" aria-label="Find a player" list="plist"><div class="sh-h">2026–27</div><a href="#season">Standings &amp; chances</a><a href="#games">Games</a><a href="#teams26">Teams</a><a href="#locked">The locked test</a><div class="sh-h">Data</div><a href="#players">Players</a><a href="#vs">Compare</a><a href="#teams">Teams</a><a href="#league">League</a><a href="#giants">Champions and contenders</a><a href="#awards">Awards vs ratings</a><div class="sh-h">Play</div><a href="#explore">Explore</a><a href="#build">Make your own PIR</a><a href="#dist">Distributions</a><a href="#clutch">Clutch?</a><div class="sh-h">Method</div><a href="#start">Start here</a><a href="#metrics">Why not PIR</a><a href="#tried">What we tried</a><a href="#how">How it works</a><a href="#glossary">Glossary</a></div>
 <main class="wrap" id="app"><p class="kicker" style="padding:40px 0">Loading data…</p></main>
 <footer><div class="wrap">
   <p>Data: www.euroleague.net and/or www.eurocupbasketball.com. Ratings, charts and analysis are my own. Independent, non-commercial project, not affiliated with Euroleague Basketball.</p>
@@ -241,7 +246,7 @@ function strip(p,w=120,h=14){ // shaded 50/80/95 strip, normal approx from 90% r
 }
 
 // ---------------- routing
-const routes={home:viewHome,players:viewPlayers,teams:viewTeams,metrics:viewMetrics,how:viewHow,league:viewLeague,clutch:viewClutch,season:viewSeason,tried:viewTried,glossary:viewGlossary,build:viewBuild,explore:viewExplore,dist:viewDist,start:viewStart,awards:viewAwards,giants:viewGiants};
+const routes={home:viewHome,players:viewPlayers,teams:viewTeams,metrics:viewMetrics,how:viewHow,league:viewLeague,clutch:viewClutch,season:viewSeason,tried:viewTried,glossary:viewGlossary,build:viewBuild,explore:viewExplore,dist:viewDist,start:viewStart,awards:viewAwards,giants:viewGiants,games:viewGames26,teams26:viewTeams26,locked:viewLocked};
 const J={}; const getJ=async f=>J[f]||(J[f]=await (await fetch("data/"+f)).json());
 let QP=new URLSearchParams();
 const SHARE_BASE=/claudeusercontent\.com$/.test(location.hostname)?"https://claude.ai/artifact/H6qpxEtYRqdjURrGbFRCQw":location.href.split("#")[0];
@@ -255,8 +260,8 @@ function wireShare(id){const b=document.getElementById(id); if(!b) return; b.add
   if(ok){b.textContent="✓ Link copied"; setTimeout(()=>b.textContent="🔗 Copy link to this view",1800);} else {const i=document.createElement("input"); i.value=url; i.readOnly=true; i.style.cssText="width:100%;margin-top:6px;font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)"; b.after(i); i.select();}});}
 function route(keep){
   const [h,qs]=splitHash(); QP=parseQP(qs);
-  document.querySelectorAll("nav.top a.l").forEach(a=>a.classList.toggle("on",h.startsWith(a.dataset.r)));
-  document.querySelectorAll(".tabbar a").forEach(a=>a.classList.toggle("on",h===a.dataset.t||h.startsWith(a.dataset.t+"-")||(a.dataset.t==="players"&&h.startsWith("p-"))));
+  document.querySelectorAll("nav.top a.l").forEach(a=>a.classList.toggle("on",h.startsWith(a.dataset.r)&&!(a.dataset.r==="teams"&&h==="teams26")));
+  document.querySelectorAll(".tabbar a").forEach(a=>a.classList.toggle("on",h===a.dataset.t||h.startsWith(a.dataset.t+"-")||(a.dataset.t==="players"&&h.startsWith("p-"))||(a.dataset.t==="season"&&/^(games|teams26|locked|g26-|t26-)/.test(h))));
   document.querySelectorAll("nav.top details.more").forEach(d=>{d.open=false; d.classList.toggle("on",!!d.querySelector("a.l.on"));}); setSheet(false);
   if(keep!==true) window.scrollTo(0,0);
   if(h==="vs"||h.startsWith("vs-")) return viewCompare(h.slice(3).split("-").filter(Boolean));
@@ -768,7 +773,7 @@ async function viewTeam26(code){
   const nW=X.games.filter(g=>g[3]>g[4]).length, G=X.games.length;
   const ro=X.roster.map(([k,name,gp,sh])=>({k,name,gp,sh,p:k.startsWith("NEW:")?null:BYKEY[k]}));
   const unk=ro.filter(r=>r.k.startsWith("NEW:")).reduce((a,r)=>a+r.sh,0)/5;
-  app.innerHTML=`<section><a class="back" href="#season">← Season 2026–27</a>
+  app.innerHTML=`<section><a class="back" href="#teams26">← All teams 2026–27</a>
    <div class="kicker" style="margin-top:10px">Season 2026–27 · regular season · data through round ${D.rmax} (${new Date(D.asof+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}) · updated weekly</div>
    <h1 style="font-size:clamp(38px,6vw,64px)">${esc(fixName(X.name))}</h1>
    ${last?`<p class="cap" style="margin-top:8px"><a href="#t-2025-${code}">Last season (2025–26) →</a></p>`:`<p class="cap" style="margin-top:8px">Did not play the 2025–26 EuroLeague season.</p>`}
@@ -1107,6 +1112,44 @@ async function viewClutch(){
      `<b>How to read:</b> Each dot = one or more team-seasons: share of close games won in the first half (horizontal) and second half (vertical) of the season. Larger dot = more team-seasons at that spot. The shares look "round" (1/2, 1/3, 3/4…) because each half has only a handful of close games.`);}
 }
 
+function s26tabs(cur){const T=[["season","Standings"],["games","Games"],["teams26","Teams"],["locked","Locked test"]];
+  return `<nav class="s26tabs" aria-label="Season 2026–27">${T.map(([r,l])=>`<a href="#${r}"${r===cur?' aria-current="page"':''}>${l}</a>`).join("")}</nav>`;}
+async function viewLocked(){const Sx=await getJ("season2026.json");
+  app.innerHTML=s26tabs("locked")+`<section><div class="kicker">Season 2026–27</div><h2>The locked test</h2><div class="prose">
+   <p>Before round ${(Sx.r0||13)+1}, every player rating was frozen using only 2008–09 to 2025–26, and the rules for judging them were written down. After the last regular-season round (deadline 31 May 2027) each rating will be scored once, on every regular-season game from round ${(Sx.r0||13)+1} on, apart from games with faulty data under rules also fixed in advance. No setting can change in between.</p>
+   <p><b>Main question.</b> For each game: knowing who played and for how long, which rating best predicts the final point margin? Ratings compared: on-court impact, the estimated impact that starts from the box score, the learned box score and PIR. The score is the average squared error in points; intervals resample whole teams.</p>
+   <p><b>Order of the comparisons</b>, each one only if the previous one passed: (1) on-court impact beats PIR; (2) the box-score start beats plain on-court impact; (3) the learned box score beats PIR. Each comparison can end as "better", "worse" or "undecided". Even before the season it was clear that (1) might well end undecided: the test is not very sensitive. In a dry run on 2025–26, a difference between on-court impact and PIR had to exceed about 13 squared points of average error (one-sided 95%) to count.</p>
+   <p><b>Two side questions</b>, also locked: does a player's free-throw percentage help predict his three-point percentage? Is there momentum from one possession to the next?</p></div>
+   <details><summary>Fingerprints of the locked files (SHA-256)</summary><ul class="mono" style="font-size:12.5px;word-break:break-all">
+    <li>Locked folder: 2224e4695a1440bcc7a262bd825ed103d8d154a77aab8cd6299848ae14a90359</li>
+    <li>Clarifications, 22 Nov: a34ec56eb28f7e2d68ac2191f5ad1faacc64b3d945b6456e729c2b66e106b833</li>
+    <li>Clarifications, 22 Nov (second review): 776788b20397c73c28dd252b9a7d1b9112d1f0d6777be5edfa69cb8a86f25f5f</li></ul></details>
+</section>`;}
+async function viewTeams26(){const [Sx,B]=await Promise.all([getJ("season2026.json"),getJ("odds.json")]), L=B.live, N=L.n;
+  const rows=Sx.teams.map(t=>{const o=L.teams.find(x=>x.t===t.t), p=o?o.p.map(v=>v/N):null; return {...t,name:fixName(t.name),top6:p?p.slice(0,6).reduce((a,b)=>a+b,0):null};}).sort((a,b)=>b.w-a.w||b.mpg-a.mpg);
+  app.innerHTML=s26tabs("teams26")+`<section><div class="kicker">Data through round ${Sx.round} (${esc(Sx.last_date)})</div><h2>Teams 2026–27</h2><p class="prose cap">Each team's page has its results with a link to every game, who has played and how much, and its chances.</p>
+   <div class="grid3">${rows.map(t=>`<a class="card door" href="#t26-${t.t}" style="text-decoration:none"><b>${esc(t.name)}</b><span>${t.w}–${t.gp-t.w} · margin ${fmt(t.mpg)} / game${t.top6!=null?` · top 6: ${pc(t.top6)}`:""}</span></a>`).join("")}</div></section>`;}
+async function viewGames26(){const [GI,Sx]=await Promise.all([getJ("g26/index.json"),getJ("season2026.json")]);
+  const nmT=t=>SHORT[t]||((Sx.teams.find(x=>x.t===t)||{}).name)||t, full=t=>{const r=Sx.teams.find(x=>x.t===t);return r?fixName(r.name):t;};
+  const rs=[...new Set(GI.games.map(g=>g[1]))].sort((a,b)=>b-a), teams=Sx.teams.map(t=>t.t).sort((a,b)=>full(a).localeCompare(full(b)));
+  const st={r:QP.get("r")&&rs.includes(+QP.get("r"))?+QP.get("r"):rs[0], t:QP.get("t")&&teams.includes(QP.get("t"))?QP.get("t"):""};
+  app.innerHTML=s26tabs("games")+`<section><div class="kicker">Season 2026–27 · ${GI.games.length} games · updated after every game night</div><h2>Games</h2>
+   <p class="prose cap">Every game has its own page: how the lead changed, where the shots came from compared with the league, which five-man units made the difference and, from round ${GI.r_lock+1} on, what our locked forecast expected before tip-off.</p>
+   <div class="controls"><label>Round <select id="gr">${rs.map(r=>`<option value="${r}">${r}</option>`).join("")}</select></label>
+    <label style="white-space:nowrap">or team <select id="gt26" style="max-width:62vw"><option value="">All teams</option>${teams.map(t=>`<option value="${t}">${esc(full(t))}</option>`).join("")}</select></label></div>
+   <div class="grid3" id="glist" style="margin-top:6px"></div></section>`;
+  const sr=document.getElementById("gr"), stt=document.getElementById("gt26"); sr.value=st.r; stt.value=st.t;
+  const card=([gc,r,date,h,a,hs,as,sh,f])=>{const hw=hs>as;
+    return `<a class="card" href="#g26-${gc}" style="text-decoration:none;color:inherit;display:block"><div class="cap">Round ${r} · ${esc(date)}</div>
+     <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:17px"><span>${hw?"<b>":""}${esc(nmT(h))}${hw?"</b>":""}</span><span class="mono">${hw?"<b>":""}${hs}${hw?"</b>":""}</span></div>
+     <div style="display:flex;justify-content:space-between;font-size:17px"><span>${!hw?"<b>":""}${esc(nmT(a))}${!hw?"</b>":""}</span><span class="mono">${!hw?"<b>":""}${as}${!hw?"</b>":""}</span></div>
+     <div class="cap" style="margin-top:6px" data-fc="${gc}">${f?"":"No forecast (rounds 1–"+GI.r_lock+")"}</div><div class="cap" style="color:var(--link);margin-top:4px">Game page →</div></a>`;};
+  const draw=()=>{st.r=+sr.value; st.t=stt.value; setQP(st.t?{t:st.t}:{r:st.r});
+    const L=st.t?GI.games.filter(g=>g[3]===st.t||g[4]===st.t).slice().reverse():GI.games.filter(g=>g[1]===st.r);
+    sr.disabled=!!st.t; document.getElementById("glist").innerHTML=L.map(card).join("")||`<p class="cap">No games.</p>`;
+    L.filter(g=>g[8]).forEach(g=>getJ(`g26/${g[0]}.json`).then(G=>{const e=document.querySelector(`[data-fc="${g[0]}"]`); if(!e||!G.fc) return; const fav=G.fc.p>=0.5?G.h:G.a, pf=Math.max(G.fc.p,1-G.fc.p), won=(G.hs>G.as)===(fav===G.h);
+      e.innerHTML=`Forecast: ${esc(nmT(fav))} ${Math.round(100*pf)}% → ${won?"won":"<b>lost</b>"}`;}).catch(()=>{}));};
+  sr.addEventListener("input",draw); stt.addEventListener("input",draw); draw();}
 // ---------------- game pages 2026-27 (26 Nov): lead flow + runs, shots vs league, five-man units, locked forecast. No box score (terms of use).
 async function viewGame26(gc){
   let G; try{G=await getJ(`g26/${gc}.json`);}catch(e){app.innerHTML=`<section><p>Game not found. <a href="#season">Season 2026–27</a></p></section>`;return;}
@@ -1114,7 +1157,7 @@ async function viewGame26(gc){
   const H=SHORT[G.h]||nmT(G.h), A=SHORT[G.a]||nmT(G.a), hw=G.hs>G.as, mm=s=>Math.floor(s/60), lab=t=>t===G.h?H:A;
   const fc=G.fc, fcTxt=fc?`Before the game, our locked model gave <b>${esc(H)}</b> a <b>${Math.round(100*fc.p)}%</b> chance to win at home, with an expected margin of <b>${fmt(fc.mu,1)}</b> points. The final margin was <b>${fmt(G.hs-G.as,0)}</b>${(fc.p>=0.5)===hw?" — the favourite won.":" — the underdog won."} <span class="cap">A single game says little about a forecast: games decided against a 70% favourite should happen about 3 times in 10.</span>`
     :`<span class="cap">No forecast for this game. Our pre-game forecasts start in round 14, because team strength was built from rounds 1–13 and would otherwise already “know” these results.</span>`;
-  app.innerHTML=`<section><a class="back" href="#season">← Season 2026–27</a>
+  app.innerHTML=`<section><a class="back" href="#games">← All games</a>
    <div class="kicker" style="margin-top:10px">Round ${G.r} · ${esc(G.date)}${G.end>2400?` · ${(G.end-2400)/300} overtime${G.end>2700?"s":""}`:""}</div>
    <h1 style="font-size:clamp(32px,5.5vw,56px)"><a href="#t26-${G.h}" style="color:inherit">${esc(H)}</a> <span style="white-space:nowrap">${G.hs}–${G.as}</span> <a href="#t26-${G.a}" style="color:inherit">${esc(A)}</a></h1>
    <p class="cap" style="margin-top:6px">${esc(nmT(G.h))} (home) vs ${esc(nmT(G.a))}</p>
@@ -1150,30 +1193,13 @@ function luTable(L){if(!L||!L.length) return `<p class="cap">No unit played 2 mi
   return `<div class="tablewrap" style="border:0"><table><thead><tr><th class="l">Players</th><th>Time</th><th>Score</th><th>+/−</th></tr></thead><tbody>${top.map(row).join("")}${worst.length?`<tr><td class="l cap" colspan="4">…</td></tr>${worst.map(row).join("")}`:""}</tbody></table></div>`;}
 async function viewSeason(){
   const Sx=await getJ("season2026.json"), rows=Sx.teams.map(t=>({...t,name:fixName(t.name)})).sort((a,b)=>b.w-a.w||b.mpg-a.mpg);
-  app.innerHTML=`<section><div class="kicker">Data through round ${Sx.round} (${esc(Sx.last_date)}) · ${Sx.games} games</div><h2>Season 2026–27</h2>
+  app.innerHTML=`${s26tabs("season")}<section><div class="kicker">Data through round ${Sx.round} (${esc(Sx.last_date)}) · ${Sx.games} games</div><h2>Season 2026–27</h2>
    <p class="prose">Standings with expected wins from the points margin. A forecast for the rest of the regular season was locked before round ${(Sx.r0||13)+1} and will be scored once, after round 38. The chances for the final standings further down use the same frozen player ratings, but they are a separate weekly estimate and play no part in that test.</p>
    <div class="card"><div class="legend"><span><i style="background:var(--accent);opacity:.4"></i>Expected wins</span><span><i style="background:var(--accent)"></i>Actual wins</span></div><div id="c-s26" class="plot"></div><p class="cap htr"><b>How to read:</b> Same reading as the Teams chart: faded orange bar = wins expected from points scored and allowed, solid orange bar = actual wins.</p></div>
    <div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>W–L</th><th>Expected W</th><th>Wins above expected</th><th>Margin / game</th></tr></thead><tbody>
    ${rows.map(t=>`<tr><td><a href="#t26-${t.t}">${esc(t.name)}</a></td><td class="mono">${t.w}–${t.gp-t.w}</td><td class="mono" title="${t.xw.toFixed(1)}">${Math.round(t.xw)}</td><td class="mono">${fmt(t.w-Math.round(t.xw),0)}</td><td class="mono">${fmt(t.mpg)}</td></tr>`).join("")}</tbody></table></div><p class="cap htr"><b>How to read:</b> Wins above expected = actual minus expected wins (the part the points do not explain; often close games). Margin / game = average points scored minus allowed.</p></section>
   <section id="odds"><p class="cap">Loading chances…</p></section>
-  <section id="g26list"><h2>Game pages</h2><p class="prose cap">For every game: how the lead changed, where the shots came from compared with the league, which five-man units made the difference and, from round 14, what our locked forecast expected.</p>
-   <div class="ctl"><label class="cap" for="g26r">Round </label><select id="g26r"></select></div><div class="tablewrap" style="margin-top:10px"><table><thead><tr><th class="l">Home</th><th>Score</th><th class="l">Away</th><th class="l"></th></tr></thead><tbody id="g26b"></tbody></table></div></section>
-  <section><h2>The locked test</h2><div class="prose">
-   <p>Before round ${(Sx.r0||13)+1}, every player rating was frozen using only 2008–09 to 2025–26, and the rules for judging them were written down. After the last regular-season round (deadline 31 May 2027) each rating will be scored once, on every regular-season game from round ${(Sx.r0||13)+1} on, apart from games with faulty data under rules also fixed in advance. No setting can change in between.</p>
-   <p><b>Main question.</b> For each game: knowing who played and for how long, which rating best predicts the final point margin? Ratings compared: on-court impact, the estimated impact that starts from the box score, the learned box score and PIR. The score is the average squared error in points; intervals resample whole teams.</p>
-   <p><b>Order of the comparisons</b>, each one only if the previous one passed: (1) on-court impact beats PIR; (2) the box-score start beats plain on-court impact; (3) the learned box score beats PIR. Each comparison can end as "better", "worse" or "undecided". Even before the season it was clear that (1) might well end undecided: the test is not very sensitive. In a dry run on 2025–26, a difference between on-court impact and PIR had to exceed about 13 squared points of average error (one-sided 95%) to count.</p>
-   <p><b>Two side questions</b>, also locked: does a player's free-throw percentage help predict his three-point percentage? Is there momentum from one possession to the next?</p></div>
-   <details><summary>Fingerprints of the locked files (SHA-256)</summary><ul class="mono" style="font-size:12.5px;word-break:break-all">
-    <li>Locked folder: 2224e4695a1440bcc7a262bd825ed103d8d154a77aab8cd6299848ae14a90359</li>
-    <li>Clarifications, 22 Nov: a34ec56eb28f7e2d68ac2191f5ad1faacc64b3d945b6456e729c2b66e106b833</li>
-    <li>Clarifications, 22 Nov (second review): 776788b20397c73c28dd252b9a7d1b9112d1f0d6777be5edfa69cb8a86f25f5f</li></ul></details>
-   <div id="lock13"></div>
-  </section>`;
-  getJ("g26/index.json").then(GI=>{const sel=document.getElementById("g26r"), tb=document.getElementById("g26b"); if(!sel) return;
-    const rs=[...new Set(GI.games.map(g=>g[1]))].sort((a,b)=>b-a), nmT=t=>{const r=Sx.teams.find(x=>x.t===t);return r?fixName(r.name):t;};
-    sel.innerHTML=rs.map(r=>`<option value="${r}">${r}</option>`).join("");
-    const draw=()=>{const r=+sel.value; tb.innerHTML=GI.games.filter(g=>g[1]===r).map(([gc,,,h,a,hs,as])=>`<tr><td class="l">${hs>as?"<b>":""}${esc(nmT(h))}${hs>as?"</b>":""}</td><td class="mono">${hs}–${as}</td><td class="l">${as>hs?"<b>":""}${esc(nmT(a))}${as>hs?"</b>":""}</td><td class="l"><a href="#g26-${gc}">Game page →</a></td></tr>`).join("");};
-    sel.addEventListener("input",draw); draw();}).catch(()=>{const e=document.getElementById("g26list"); if(e) e.hidden=true;});
+  <section><div id="lock13"></div><p class="cap" style="margin-top:10px">How the player ratings will be judged at the end of the season: <a href="#locked">the locked test →</a></p></section>`;
   const el=document.getElementById("c-s26");
   winsChart(el,rows);
   oddsSection(document.getElementById("odds"),rows);
