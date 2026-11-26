@@ -262,6 +262,7 @@ function route(keep){
   if(h==="vs"||h.startsWith("vs-")) return viewCompare(h.slice(3).split("-").filter(Boolean));
   if(h.startsWith("p-")) return viewPlayer(h.slice(2));
   if(h.startsWith("t26-")) return viewTeam26(h.slice(4));
+  if(h.startsWith("g26-")) return viewGame26(+h.slice(4));
   if(h.startsWith("t-")) {const [s,t]=h.slice(2).split("-"); return viewTeam(+s,t);}
   return (routes[h]||viewHome)();
 }
@@ -775,8 +776,8 @@ async function viewTeam26(code){
     <div class="card stat"><b>${st.mpg!=null?fmt(st.mpg):"—"}</b><span>average points margin per game</span></div>
     <div class="card stat"><b>${top6!=null?Math.round(100*top6)+"%":"—"}</b><span>chance of a top-6 finish${top10!=null?` · ${Math.round(100*top10)}% top 10 · average finish ${ep.toFixed(1)}`:""} (<a href="#season">how this is estimated</a>)</span></div></div></section>
   <section><h2>Results</h2><div class="card"><div id="c-res" class="plot"></div><p class="cap htr"><b>How to read:</b> One bar per game, in order: points scored minus points allowed. Above the line = win.</p></div>
-   <div class="tablewrap" style="margin-top:14px"><table><thead><tr><th>Round</th><th class="l">Opponent</th><th class="l">Home / away</th><th>Score</th><th class="l">Result</th></tr></thead><tbody>
-   ${X.games.slice().reverse().map(([r,op,h,pf,pa])=>`<tr><td class="mono">${r}</td><td class="l"><a href="#t26-${op}">${esc(nm(op))}</a></td><td class="l">${h?"Home":"Away"}</td><td class="mono">${pf}–${pa}</td><td class="l"><b>${pf>pa?"W":"L"}</b> <span class="cap">${fmt(pf-pa,0)}</span></td></tr>`).join("")}
+   <div class="tablewrap" style="margin-top:14px"><table><thead><tr><th>Round</th><th class="l">Opponent</th><th class="l">Home / away</th><th>Score</th><th class="l">Result</th><th class="l">Game</th></tr></thead><tbody>
+   ${X.games.slice().reverse().map(([r,op,h,pf,pa,gc])=>`<tr><td class="mono">${r}</td><td class="l"><a href="#t26-${op}">${esc(nm(op))}</a></td><td class="l">${h?"Home":"Away"}</td><td class="mono">${pf}–${pa}</td><td class="l"><b>${pf>pa?"W":"L"}</b> <span class="cap">${fmt(pf-pa,0)}</span></td><td class="l">${gc!=null?`<a href="#g26-${gc}">Game page →</a>`:""}</td></tr>`).join("")}
    </tbody></table></div></section>
   <section><h2>Who has played</h2><p class="prose cap">Share of the team's playing time so far this season, with each player's on-court impact frozen before the season (from 2008–09 to 2025–26 only). Players new to the EuroLeague have no rating yet.</p>
    <div class="tablewrap"><table><thead><tr><th class="l">Player</th><th>Games</th><th>Share of time</th><th>On-court impact</th><th class="l">Range</th><th class="l">Group</th></tr></thead><tbody>
@@ -1106,6 +1107,47 @@ async function viewClutch(){
      `<b>How to read:</b> Each dot = one or more team-seasons: share of close games won in the first half (horizontal) and second half (vertical) of the season. Larger dot = more team-seasons at that spot. The shares look "round" (1/2, 1/3, 3/4…) because each half has only a handful of close games.`);}
 }
 
+// ---------------- game pages 2026-27 (26 Nov): lead flow + runs, shots vs league, five-man units, locked forecast. No box score (terms of use).
+async function viewGame26(gc){
+  let G; try{G=await getJ(`g26/${gc}.json`);}catch(e){app.innerHTML=`<section><p>Game not found. <a href="#season">Season 2026–27</a></p></section>`;return;}
+  const [Sx]=await Promise.all([getJ("season2026.json")]), nmT=t=>{const r=Sx.teams.find(x=>x.t===t);return r?fixName(r.name):t;};
+  const H=SHORT[G.h]||nmT(G.h), A=SHORT[G.a]||nmT(G.a), hw=G.hs>G.as, mm=s=>Math.floor(s/60), lab=t=>t===G.h?H:A;
+  const fc=G.fc, fcTxt=fc?`Before the game, our locked model gave <b>${esc(H)}</b> a <b>${Math.round(100*fc.p)}%</b> chance to win at home, with an expected margin of <b>${fmt(fc.mu,1)}</b> points. The final margin was <b>${fmt(G.hs-G.as,0)}</b>${(fc.p>=0.5)===hw?" — the favourite won.":" — the underdog won."} <span class="cap">A single game says little about a forecast: games decided against a 70% favourite should happen about 3 times in 10.</span>`
+    :`<span class="cap">No forecast for this game. Our pre-game forecasts start in round 14, because team strength was built from rounds 1–13 and would otherwise already “know” these results.</span>`;
+  app.innerHTML=`<section><a class="back" href="#season">← Season 2026–27</a>
+   <div class="kicker" style="margin-top:10px">Round ${G.r} · ${esc(G.date)}${G.end>2400?` · ${(G.end-2400)/300} overtime${G.end>2700?"s":""}`:""}</div>
+   <h1 style="font-size:clamp(32px,5.5vw,56px)"><a href="#t26-${G.h}" style="color:inherit">${esc(H)}</a> <span style="white-space:nowrap">${G.hs}–${G.as}</span> <a href="#t26-${G.a}" style="color:inherit">${esc(A)}</a></h1>
+   <p class="cap" style="margin-top:6px">${esc(nmT(G.h))} (home) vs ${esc(nmT(G.a))}</p>
+   <p class="prose">${fcTxt}</p></section>
+  <section><h2>How the lead changed</h2><div class="card"><div class="legend"><span><i style="background:var(--accent)"></i>${esc(H)} ahead</span><span><i style="background:var(--down)"></i>${esc(A)} ahead</span><span><i style="background:var(--muted);opacity:.25"></i>Run of 10–0 or more</span></div><div id="c-flow" class="plot"></div>
+   <p class="cap htr"><b>How to read:</b> Points margin through the game, ${esc(H)} minus ${esc(A)}. Above the line = ${esc(H)} leads. Grey bands = one team scored 10 or more points in a row (the whole league averages about one such run per game).</p></div>
+   ${G.runs.length?`<p class="cap">${G.runs.map(r=>`<b>${r.pts}–0</b> ${esc(lab(r.t))}, minute ${mm(r.t0)+1}–${mm(r.t1)+1} (${r.from[0]}–${r.from[1]} → ${r.to[0]}–${r.to[1]})`).join(" · ")}</p>`:`<p class="cap">No run of 10–0 or more in this game.</p>`}</section>
+  <section id="g-sh"><h2>Where the shots came from</h2>${G.shots?`<div class="grid2" id="g-courts"></div>
+   <p class="cap htr"><b>How to read:</b> Every field-goal attempt, filled = made, ring = missed. In the tables, “expected” is what an average 2026–27 EuroLeague shooter would score on the same shots, zone by zone (league rates from GI_N_PLACEHOLDER shots this season); “±” = points minus expected. A positive “±” = more points than those shots usually bring: good shooting, or luck, in one game the two cannot be told apart.</p>`:`<p class="cap">Shot locations for this game are not available yet.</p>`}</section>
+  <section><h2>Five-man units</h2><div class="grid2">${[G.h,G.a].map(t=>`<div class="card"><h3 style="font-size:15px">${esc(lab(t))}</h3>${luTable(G.lu[t])}</div>`).join("")}</div>
+   <p class="cap htr"><b>How to read:</b> Units that played at least 2 minutes together, best points difference first (plus the worst ones). Score = points scored–allowed while those five were on the floor. Over a few minutes this is mostly noise (see <a href="#league">League → lineups</a>): it describes this game, it does not rate the players.</p></section>`;
+  // flow chart
+  {const el=document.getElementById("c-flow"), F=G.flow.map(([t,m])=>({t:t/60,m})); F.push({t:G.end/60,m:F[F.length-1].m});
+   const ym=Math.max(8,d3.max(F,d=>Math.abs(d.m))+2), qs=d3.range(10,G.end/60,0).length?[]:[]; const Q=[10,20,30].concat(d3.range(40,G.end/60,5));
+   el.replaceChildren(Plot.plot({width:W(el),height:300,marginLeft:40,marginBottom:34,style:sty(),x:{label:"minute →",domain:[0,G.end/60],ticks:[0,10,20,30,40].concat(d3.range(45,G.end/60+1,5))},y:{label:"↑ margin",domain:[-ym,ym],grid:true,tickFormat:v=>v>0?"+"+v:v},
+     marks:[Plot.rectX(G.runs,{x1:d=>d.t0/60,x2:d=>Math.max(d.t1/60,d.t0/60+0.4),y1:-ym,y2:ym,fill:css("--muted"),fillOpacity:.16}),
+       Plot.ruleX(Q,{stroke:css("--muted"),strokeOpacity:.4,strokeDasharray:"3,3"}),
+       Plot.areaY(F,{x:"t",y1:0,y2:d=>Math.max(0,d.m),curve:"step-after",fill:css("--accent"),fillOpacity:.35}),
+       Plot.areaY(F,{x:"t",y1:0,y2:d=>Math.min(0,d.m),curve:"step-after",fill:css("--down"),fillOpacity:.35}),
+       Plot.lineY(F,{x:"t",y:"m",curve:"step-after",stroke:css("--ink"),strokeWidth:1.3}),Plot.ruleY([0],{stroke:css("--ink")}),
+       Plot.text([`${H} ahead`],{frameAnchor:"top-left",dx:6,dy:4,fill:css("--muted"),fontSize:11}),Plot.text([`${A} ahead`],{frameAnchor:"bottom-left",dx:6,dy:-4,fill:css("--muted"),fontSize:11}),
+       Plot.tip(F,Plot.pointerX({x:"t",y:"m",title:d=>`minute ${Math.floor(d.t)+1}: ${d.m>0?H+" +"+d.m:d.m<0?A+" +"+(-d.m):"tied"}`}))]}));}
+  // shots
+  if(G.shots){const GI=await getJ("g26/index.json"); const box=document.getElementById("g-courts");
+    document.querySelector("#g-sh .htr").innerHTML=document.querySelector("#g-sh .htr").innerHTML.replace("GI_N_PLACEHOLDER",GI.n_shots.toLocaleString("en-GB"));
+    box.innerHTML=[G.h,G.a].map((t,i)=>{const S=G.shots[t], D={line3:675,shots:S.s,z:S.z}; let pts=0,ex=0;
+      const rows=SZ.map(([z,lb,v])=>{const [a,m]=S.z[z], e=a*(GI.league[z]||0); pts+=v*m; ex+=v*(e||0); const SL={rim:"Rim",paint:"Paint",mid:"Mid-range",c3l:"L corner 3",w3l:"L wing 3",t3:"Top 3",w3r:"R wing 3",c3r:"R corner 3"}; return a?`<tr><td class="l" title="${lb}">${SL[z]}</td><td class="mono">${m}/${a}</td><td class="mono">${v*m}</td><td class="mono">${(v*(e||0)).toFixed(1)}</td><td class="mono">${fmt(v*(m-(e||0)),1)}</td></tr>`:"";}).join("");
+      return `<div class="card"><h3 style="font-size:15px">${esc(lab(t))}</h3>${courtSVG(D,"shots","all","g"+i)}<div class="tablewrap" style="border:0"><table><thead><tr><th class="l">Zone</th><th>Made</th><th title="Points">Pts</th><th title="Expected points at league rates">Exp.</th><th title="Points minus expected">±</th></tr></thead><tbody>${rows}<tr><td class="l"><b>All</b></td><td class="mono"></td><td class="mono"><b>${pts}</b></td><td class="mono"><b>${ex.toFixed(1)}</b></td><td class="mono"><b>${fmt(pts-ex,1)}</b></td></tr></tbody></table></div>${S.nocoord?`<p class="cap">${S.nocoord} shot${S.nocoord>1?"s":""} without a location left out.</p>`:""}</div>`;}).join("");}
+}
+function luTable(L){if(!L||!L.length) return `<p class="cap">No unit played 2 minutes together.</p>`;
+  const top=L.slice(0,3), rest=L.slice(3), worst=rest.length?rest.slice(-Math.min(2,rest.length)):[];
+  const row=u=>`<tr><td class="l" style="white-space:normal">${u.p.map(esc).join(", ")}</td><td class="mono">${Math.floor(u.sec/60)}:${String(u.sec%60).padStart(2,"0")}</td><td class="mono">${u.pf}–${u.pa}</td><td class="mono"><b>${fmt(u.pm,0)}</b></td></tr>`;
+  return `<div class="tablewrap" style="border:0"><table><thead><tr><th class="l">Players</th><th>Time</th><th>Score</th><th>+/−</th></tr></thead><tbody>${top.map(row).join("")}${worst.length?`<tr><td class="l cap" colspan="4">…</td></tr>${worst.map(row).join("")}`:""}</tbody></table></div>`;}
 async function viewSeason(){
   const Sx=await getJ("season2026.json"), rows=Sx.teams.map(t=>({...t,name:fixName(t.name)})).sort((a,b)=>b.w-a.w||b.mpg-a.mpg);
   app.innerHTML=`<section><div class="kicker">Data through round ${Sx.round} (${esc(Sx.last_date)}) · ${Sx.games} games</div><h2>Season 2026–27</h2>
@@ -1114,6 +1156,8 @@ async function viewSeason(){
    <div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>W–L</th><th>Expected W</th><th>Wins above expected</th><th>Margin / game</th></tr></thead><tbody>
    ${rows.map(t=>`<tr><td><a href="#t26-${t.t}">${esc(t.name)}</a></td><td class="mono">${t.w}–${t.gp-t.w}</td><td class="mono" title="${t.xw.toFixed(1)}">${Math.round(t.xw)}</td><td class="mono">${fmt(t.w-Math.round(t.xw),0)}</td><td class="mono">${fmt(t.mpg)}</td></tr>`).join("")}</tbody></table></div><p class="cap htr"><b>How to read:</b> Wins above expected = actual minus expected wins (the part the points do not explain; often close games). Margin / game = average points scored minus allowed.</p></section>
   <section id="odds"><p class="cap">Loading chances…</p></section>
+  <section id="g26list"><h2>Game pages</h2><p class="prose cap">For every game: how the lead changed, where the shots came from compared with the league, which five-man units made the difference and, from round 14, what our locked forecast expected.</p>
+   <div class="ctl"><label class="cap" for="g26r">Round </label><select id="g26r"></select></div><div class="tablewrap" style="margin-top:10px"><table><thead><tr><th class="l">Home</th><th>Score</th><th class="l">Away</th><th class="l"></th></tr></thead><tbody id="g26b"></tbody></table></div></section>
   <section><h2>The locked test</h2><div class="prose">
    <p>Before round ${(Sx.r0||13)+1}, every player rating was frozen using only 2008–09 to 2025–26, and the rules for judging them were written down. After the last regular-season round (deadline 31 May 2027) each rating will be scored once, on every regular-season game from round ${(Sx.r0||13)+1} on, apart from games with faulty data under rules also fixed in advance. No setting can change in between.</p>
    <p><b>Main question.</b> For each game: knowing who played and for how long, which rating best predicts the final point margin? Ratings compared: on-court impact, the estimated impact that starts from the box score, the learned box score and PIR. The score is the average squared error in points; intervals resample whole teams.</p>
@@ -1125,6 +1169,11 @@ async function viewSeason(){
     <li>Clarifications, 22 Nov (second review): 776788b20397c73c28dd252b9a7d1b9112d1f0d6777be5edfa69cb8a86f25f5f</li></ul></details>
    <div id="lock13"></div>
   </section>`;
+  getJ("g26/index.json").then(GI=>{const sel=document.getElementById("g26r"), tb=document.getElementById("g26b"); if(!sel) return;
+    const rs=[...new Set(GI.games.map(g=>g[1]))].sort((a,b)=>b-a), nmT=t=>{const r=Sx.teams.find(x=>x.t===t);return r?fixName(r.name):t;};
+    sel.innerHTML=rs.map(r=>`<option value="${r}">${r}</option>`).join("");
+    const draw=()=>{const r=+sel.value; tb.innerHTML=GI.games.filter(g=>g[1]===r).map(([gc,,,h,a,hs,as])=>`<tr><td class="l">${hs>as?"<b>":""}${esc(nmT(h))}${hs>as?"</b>":""}</td><td class="mono">${hs}–${as}</td><td class="l">${as>hs?"<b>":""}${esc(nmT(a))}${as>hs?"</b>":""}</td><td class="l"><a href="#g26-${gc}">Game page →</a></td></tr>`).join("");};
+    sel.addEventListener("input",draw); draw();}).catch(()=>{const e=document.getElementById("g26list"); if(e) e.hidden=true;});
   const el=document.getElementById("c-s26");
   winsChart(el,rows);
   oddsSection(document.getElementById("odds"),rows);
