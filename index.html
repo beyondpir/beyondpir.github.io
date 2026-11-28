@@ -1138,6 +1138,13 @@ async function viewGames26(){const [GI,Sx]=await Promise.all([getJ("g26/index.js
    <div class="controls"><label>Round <select id="gr">${rs.map(r=>`<option value="${r}">${r}</option>`).join("")}</select></label>
     <label style="white-space:nowrap">or team <select id="gt26" style="max-width:62vw"><option value="">All teams</option>${teams.map(t=>`<option value="${t}">${esc(full(t))}</option>`).join("")}</select></label></div>
    <div class="grid3" id="glist" style="margin-top:6px"></div></section>`;
+  if(GI.next&&GI.next.games.length){const nx=GI.next, sec=document.createElement("section");
+    sec.innerHTML=`<div class="kicker">Before tip-off</div><h2>Next: round ${nx.r}</h2><p class="prose cap">Published before tip-off, from the same locked model as the game pages. A 65% favourite should still lose about one game in three.</p>
+     <div class="grid3">${nx.games.map(([h,a,mu,p])=>{const fh=p>=0.5, pf=fh?p:1-p; return `<div class="card"><div class="cap">Round ${nx.r}</div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:17px"><span>${fh?"<b>":""}${esc(nmT(h))}${fh?"</b>":""} <span class="cap">home</span></span><span class="mono">${fh?"<b>":""}${Math.round(100*p)}%${fh?"</b>":""}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:17px"><span>${!fh?"<b>":""}${esc(nmT(a))}${!fh?"</b>":""}</span><span class="mono">${!fh?"<b>":""}${100-Math.round(100*p)}%${!fh?"</b>":""}</span></div>
+      <div class="cap" style="margin-top:6px">Expected margin: ${esc(nmT(mu>=0?h:a))} by ${Math.abs(mu).toFixed(1)}</div></div>`;}).join("")}</div>`;
+    app.querySelector("section").before(sec);}
   const sr=document.getElementById("gr"), stt=document.getElementById("gt26"); sr.value=st.r; stt.value=st.t;
   const card=([gc,r,date,h,a,hs,as,sh,f])=>{const hw=hs>as;
     return `<a class="card" href="#g26-${gc}" style="text-decoration:none;color:inherit;display:block"><div class="cap">Round ${r} · ${esc(date)}</div>
@@ -1205,6 +1212,7 @@ async function viewSeason(){
    <div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>W–L</th><th>Expected W</th><th>Wins above expected</th><th>Margin / game</th></tr></thead><tbody>
    ${rows.map(t=>`<tr><td><a href="#t26-${t.t}">${esc(t.name)}</a></td><td class="mono">${t.w}–${t.gp-t.w}</td><td class="mono" title="${t.xw.toFixed(1)}">${Math.round(t.xw)}</td><td class="mono">${fmt(t.w-Math.round(t.xw),0)}</td><td class="mono">${fmt(t.mpg)}</td></tr>`).join("")}</tbody></table></div><p class="cap htr"><b>How to read:</b> Wins above expected = actual minus expected wins (the part the points do not explain; often close games). Margin / game = average points scored minus allowed.</p></section>
   <section id="odds"><p class="cap">Loading chances…</p></section>
+  <section id="road"></section>
   <section><div id="lock13"></div><p class="cap" style="margin-top:10px">How the player ratings will be judged at the end of the season: <a href="#locked">the locked test →</a></p></section>`;
   const el=document.getElementById("c-s26");
   winsChart(el,rows);
@@ -1219,7 +1227,7 @@ async function oddsSection(box,rows){
     return {...x,name:nm[x.t]||x.t,p,top6:s6,pin:s10-s6,out:1-s10,first:p[0],ep:p.reduce((a,v,i)=>a+v*(i+1),0),d6:prevP&&prevP[x.t]!=null?s6-prevP[x.t]:null};}).sort((a,b)=>a.ep-b.ep);
   box.innerHTML=`<div class="kicker">After round ${L.rmax} (${new Date(L.asof+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}) · ${N.toLocaleString("en")} simulated seasons</div><h2>Chances for the final standings</h2>
    <p class="prose">The rest of the regular season is played out ${N.toLocaleString("en")} times. Each game's expected margin comes from the players each team has been using this season (their share of minutes so far) and those players' on-court impact frozen before the season, plus home court. Results already played are kept as they are. Top 6 go straight to the playoffs, 7–10 to the play-in. Ties are broken by head-to-head wins, then head-to-head margin, then overall margin.</p>
-   <div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>W–L</th><th>Top 6</th><th>7–10 (play-in)</th><th>11th or lower</th><th>1st</th><th>Average finish</th><th title="Change in the top-6 chance since the previous weekly update">Change since last week</th></tr></thead><tbody>
+   <div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>W–L</th><th>Top 6</th><th>7–10 (play-in)</th><th>11th or lower</th><th>1st</th><th>Average finish</th><th title="Change in the top-6 chance since the previous update">Change since last update</th></tr></thead><tbody>
    ${T.map(t=>`<tr><td><a href="#t26-${t.t}">${esc(t.name)}</a></td><td class="mono">${t.w}–${t.g-t.w}</td><td class="mono"><b>${pc(t.top6)}</b></td><td class="mono">${pc(t.pin)}</td><td class="mono">${pc(t.out)}</td><td class="mono">${pc(t.first)}</td><td class="mono">${t.ep.toFixed(1)}</td><td class="mono">${t.d6==null?"—":Math.round(100*t.d6)===0?"=":`<span style="color:${t.d6>0?"var(--up,#1f9d55)":"var(--down)"}">${t.d6>0?"▲":"▼"} ${Math.abs(Math.round(100*t.d6))}</span>`}</td></tr>`).join("")}</tbody></table></div><p class="cap htr"><b>How to read:</b> Each row = one team, sorted by average finishing position. Percentages = share of simulated seasons in which that happened. The last column shows how the top-6 chance moved since the previous update, in percentage points (it fills in from the second update).</p>
    <div class="card" style="margin-top:14px"><h3>Where each team is likely to finish</h3><div id="c-hm" class="plot"></div><p class="cap htr" id="h-hm"></p></div>
    <div class="card" style="margin-top:14px"><h3>How the top-6 chances moved</h3><div id="c-hi" class="plot"></div></div>
@@ -1261,16 +1269,35 @@ async function oddsSection(box,rows){
       marks:[Plot.lineY(pts,{x:"r",y:"v",z:"t",stroke:css("--accent"),strokeOpacity:.35}),Plot.dot(pts,{x:"r",y:"v",fill:css("--accent"),r:2.5}),
         Plot.text(pts.filter(p=>p.r===H_[H_.length-1].rmax),{x:"r",y:"v",text:"t",dx:14,fontSize:10,fill:css("--muted")}),
         Plot.tip(pts,Plot.pointer({x:"r",y:"v",title:p=>`${p.name}\nafter round ${p.r}: ${pc(p.v)}`}))]}));
-    hi.insertAdjacentHTML("afterend",`<p class="cap htr"><b>How to read:</b> Each line = one team's chance of finishing in the top 6, one point per weekly update.</p>`);}
+    hi.insertAdjacentHTML("afterend",`<p class="cap htr"><b>How to read:</b> Each line = one team's chance of finishing in the top 6, one point per update.</p>`);}
   const sel=document.getElementById("od-s");
   const draw=()=>{const y=sel.value, S=B.seasons[y], n=S.teams[0].p.reduce((a,b)=>a+b,0), tn=t=>{const r=TEAMS.find(x=>x.s===+y&&x.t===t);return r?r.name:t;};
     document.getElementById("od-h").textContent=S.pi?"Top-6 chance after round 13":"Top-8 chance after round 13";
     document.getElementById("od-b").innerHTML=S.teams.map(x=>({...x,pp:x.p.slice(0,S.cut).reduce((a,b)=>a+b,0)/n})).sort((a,b)=>b.pp-a.pp)
       .map(x=>`<tr><td>${esc(tn(x.t))}</td><td class="mono">${x.w13}</td><td class="mono"><b>${pc(x.pp)}</b></td><td class="mono">${x.fin}</td><td class="l">${x.fin<=S.cut?"yes":"no"}</td></tr>`).join("");};
   sel.addEventListener("input",draw); draw();
+  roadSection(document.getElementById("road"),B,nm);
   const l13=document.getElementById("lock13"); if(l13) l13.innerHTML=`<details style="margin-top:12px"><summary>The standings estimate locked after round 13 (21 Nov 2026), kept here as it was published</summary><div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>W–L</th><th>Top 6</th><th>7–10</th><th>1st</th></tr></thead><tbody>
     ${B.now.teams.map(x=>{const p=x.p.map(v=>v/B.now.n),s6=p.slice(0,6).reduce((a,b)=>a+b,0),s10=p.slice(0,10).reduce((a,b)=>a+b,0);return {x,p,s6,s10};}).sort((a,b)=>b.s6-a.s6).map(({x,p,s6,s10})=>`<tr><td>${esc(nm[x.t]||x.t)}</td><td class="mono">${x.w13}–${x.g13-x.w13}</td><td class="mono">${pc(s6)}</td><td class="mono">${pc(s10-s6)}</td><td class="mono">${pc(p[0])}</td></tr>`).join("")}</tbody></table></div></details>`;
 }
+
+// ---- 28 Nov 2026: Road to the title (Ε9, PROTOCOL_bracket_28Nov.md → ΚΑΛΥΤΕΡΟ) ----
+function roadSection(box,B,nm){if(!box||!B.live||!B.live.teams[0].stage) return;
+  const L=B.live, N=L.n, BB=B.back_bracket, sh=t=>SHORT[t]||nm[t]||t;
+  const T=L.teams.map(x=>({t:x.t,name:nm[x.t]||x.t,s:x.stage.map(v=>v/N)})).sort((a,b)=>b.s[4]-a.s[4]||b.s[2]-a.s[2]||b.s[1]-a.s[1]);
+  const F=L.bracket, o=F.order, fp=t=>F.p[t].map(v=>v/N);
+  const row=(i)=>{const t=o[i], p=fp(t), pin=i>=6; return `<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;${i%1?"":""}"><span><span class="mono cap" style="display:inline-block;width:1.6em">${i+1}</span>${esc(sh(t))}${pin?` <span class="cap">(via play-in, ${pc(p[1])})</span>`:""}</span><span class="mono" title="Final Four chance in this bracket"><b>${pc(p[2])}</b></span></div>`;};
+  const pair=(a,b)=>`<div style="border:1px solid var(--line,rgba(127,127,127,.25));border-radius:8px;padding:4px 10px;margin:8px 0">${row(a)}<div style="border-top:1px solid var(--line,rgba(127,127,127,.25))"></div>${row(b)}</div>`;
+  box.innerHTML=`<div class="kicker">After round ${L.rmax} · the same ${N.toLocaleString("en")} simulated seasons, played to the end</div><h2>Road to the title</h2>
+   <p class="prose">Each simulated season continues past round 38: a play-in for 7th to 10th, best-of-five playoff series (1–8, 2–7, 3–6, 4–5; games 1, 2 and 5 at the better-placed team) and a Final Four on a neutral court. A team's strength is drawn once per simulated season and carries through the playoffs, so a strong team stays strong in every round.</p>
+   <div class="tablewrap"><table><thead><tr><th class="l">Team</th><th>Playoffs</th><th>Final Four</th>${innerWidth<620?"":"<th>Final</th>"}<th>Title</th></tr></thead><tbody>
+   ${T.map(t=>`<tr><td><a href="#t26-${t.t}">${esc(innerWidth<620?sh(t.t):t.name)}</a></td><td class="mono">${pc(t.s[1])}</td><td class="mono"><b>${pc(t.s[2])}</b></td>${innerWidth<620?"":`<td class="mono">${pc(t.s[3])}</td>`}<td class="mono">${pc(t.s[4])}</td></tr>`).join("")}</tbody></table></div>
+   <p class="cap htr"><b>How to read:</b> Share of simulated seasons in which the team reached each stage. Playoffs = top 6, or 7th–8th through the play-in.</p>
+   <div class="card" style="margin-top:14px"><h3>If the table ended in today's expected order</h3>
+    <div class="grid2"><div><div class="cap">Semi-final 1</div>${pair(0,7)}${pair(3,4)}</div><div><div class="cap">Semi-final 2</div>${pair(1,6)}${pair(2,5)}</div></div>
+    <p class="cap htr"><b>How to read:</b> One possible bracket, not a prediction of the table: teams placed by their average simulated finish. Number on the right = chance of reaching the Final Four from that spot. The two pairs on each side meet in the same semi-final. Seeds 7 and 8 first have to come through the play-in (chance in brackets).</p></div>
+   ${BB?`<div class="card" style="margin-top:14px"><h3>Has this worked before?</h3><p class="prose" style="margin:0">Before showing these numbers we checked them on six earlier seasons (2018–19 to 2025–26, same as above), with the rule written down in advance: Final Four chances made after round 13, ${BB.n} team-seasons, ${BB.n_f4} Final Four places. Average error ${BB.brier_model.toFixed(3)}, against ${BB.brier_base.toFixed(3)} using only the record and home court: difference ${fmt(BB.diff,3)}, 95% interval [${fmt(BB.ci[0],3)}, ${fmt(BB.ci[1],3)}], so <b>better than the record alone</b>.</p>
+     <p class="prose cap" style="margin-top:8px">Read with care: six seasons is a small sample and the check was expected to find a difference only about one time in three, so part of this margin is luck. Teams given 10–25% made the Final Four less often than that (1 of 26). Playoff series (${BB.series.n}): ${BB.series.brier_model.toFixed(3)} against ${BB.series.brier_base.toFixed(3)} for "the team with home court". Title chances alone could not be told apart from the record (${BB.title.brier_model.toFixed(3)} vs ${BB.title.brier_base.toFixed(3)}; only six titles).</p></div>`:""}`;}
 
 function viewMetrics(){
   const D=CORE.diffs;
